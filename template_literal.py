@@ -1,15 +1,26 @@
 from regex import template_literal_token
 
 class TemplateLiteral:
-	def __init__(self, value, templates):
-		self.value = value
-		self.templates = templates
+	def __init__(self):
+		self.strings = []
+		self.expressions = []
+		self.templates = []
 	
 	def __str__(self):
-		return f"TemplateLiteral({self.value}, {self.templates})"
+		return f"TemplateLiteral({self.strings}, {self.templates})"
+	
+	def add_template(self):
+		self.templates.append(self.expressions)
+		self.expressions = []
 	
 	def to_script(self):
 		output = ""
-		for index in range(0, len(self.value) - 1):
-			output = self.value[index] + f'" @ ({self.templates[index].to_script()}) @ "' + self.value[index + 1]
+		for index in range(0, len(self.strings) - 1):
+			expression_output = ""
+			for expression in self.templates[index]:
+				expression_output = expression_output + expression.to_script()
+			output = output + self.strings[index] + f'" @ ({expression_output}) @ "'
+		
+		output = output + self.strings[len(self.strings) - 1]
+
 		return f'"{output}"'

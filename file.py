@@ -20,7 +20,7 @@ class File:
 		
 		char = self.current_line[self.current_index]
 		self.current_index = self.current_index + 1
-		while whitespace.match(char) and ignore_whitespace:
+		while whitespace.match(char) and ignore_whitespace and len(self.current_line) > self.current_index:
 			char = self.current_line[self.current_index]
 			self.current_index = self.current_index + 1
 

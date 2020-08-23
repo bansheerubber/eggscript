@@ -1,2 +1,7 @@
-%hey = "im cool"
-%hello = "hey how are {%egg} you doing";
+%hey = "im cool";
+%hello = "hey how are {%egg + 25} you doing {%lol}";
+%hey2 = 5;
+
+%test2 = 15 + 25;
+
+%test = %hey + %hey2 / 5;
