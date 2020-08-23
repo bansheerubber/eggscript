@@ -1,6 +1,6 @@
 import re
 
-digits = re.compile('\d+')
+digits = re.compile('(-|)\d+')
 template_literal_token = re.compile('{|}')
 semicolon = re.compile(';')
 string_token = re.compile('\"|\'')
