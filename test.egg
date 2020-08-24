@@ -1,4 +1,7 @@
+%test.hello.hey = "5";
+
 %hey = "im cool";
+
 %hello = "hey how are {%egg + 25} you doing {%lol}";
 %hey2 = 5;
 

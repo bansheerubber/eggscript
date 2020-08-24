@@ -4,10 +4,18 @@ class File:
 	def __init__(self, filename):
 		self.file = open(filename, "r")
 		self.current_line = None
+		self.line_count = 0
 		self.current_index = 0
 	
 	def read_line(self):
 		line = self.file.readline()
+		self.line_count = self.line_count + 1
+		# TODO: remove me
+		while line[0] == "#":
+			line = self.file.readline()
+			if not line:
+				raise Exception("EOF")
+
 		if not line:
 			raise Exception("EOF")
 		else:
@@ -20,11 +28,14 @@ class File:
 		
 		char = self.current_line[self.current_index]
 		self.current_index = self.current_index + 1
-		while whitespace.match(char) and ignore_whitespace and len(self.current_line) > self.current_index:
+		while whitespace.match(char) != None and ignore_whitespace and len(self.current_line) > self.current_index:
 			char = self.current_line[self.current_index]
 			self.current_index = self.current_index + 1
 
-		return char
+		if len(self.current_line) == self.current_index and whitespace.match(char) != None:
+			return ''
+		else:
+			return char
 	
 	def give_character_back(self):
 		self.current_index = self.current_index - 1

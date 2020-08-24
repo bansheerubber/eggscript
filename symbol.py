@@ -1,9 +1,9 @@
-class Variable:
+class Symbol:
 	def __init__(self, name):
 		self.name = name
 	
 	def __str__(self):
-		return f"Variable({self.name})"
+		return f"Symbol({self.name})"
 	
 	def to_script(self):
 		return self.name

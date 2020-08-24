@@ -1,52 +1,35 @@
+from chaining_expression import ChainingExpression
 from file import File
 from literal import Literal
 from operator_expression import OperatorExpression
 from template_literal import TemplateLiteral
-from regex import digits, operator_token, template_literal_token, semicolon, string_token, valid_variable_name, variable_token
-from variable import Variable
-from variable_assignment import VariableAssignment
+from tokenizer_exception import TokenizerException
+from regex import assignment_token, chaining_token, digits, operator_token, template_literal_token, semicolon, string_token, valid_symbol, variable_token
+from symbol import Symbol
+from variable_assignment_expression import VariableAssignmentExpression
+from variable_symbol import VariableSymbol
 
 class Tokenizer:
 	def __init__(self, file):
 		self.file = file
 	
-	def dump_buffer(self, tree):
+	def absorb_buffer(self, tree):
 		if digits.match(self.buffer):
 			tree.expressions.append(Literal(self.buffer))
 			self.buffer = ""
-	
-	def read_variable_name(self):
-		# keep reading until we absorb the full variable
-		self.file.give_character_back()
-		variable_name = self.file.read_character()
-		while valid_variable_name.fullmatch(variable_name) or len(variable_name) == 1:
-			char = self.file.read_character()
-			variable_name = variable_name + char
-		self.file.give_character_back()
-		return variable_name[0:-1]
+		elif valid_symbol.match(self.buffer):
+			tree.expressions.append(self.get_symbol(self.buffer))
+			self.buffer = ""
 
-	def read_variable_assignment(self, stop_ats):
-		variable_name = self.read_variable_name()
-
-		# absorb equals sign
-		char = self.file.read_character()
-		for stop_at in stop_ats:
-			if stop_at.match(char):
-				print(f"TODO: Shouldn't be finding normal variable '{variable_name}' in variable assignment")
-				return Variable(variable_name)
-
-		if char != "=":
-			print(f"TODO: Shouldn't be finding normal variable '{variable_name}' in variable assignment (failed when found '{char}' instead of '=')")
-			return Variable(variable_name)
-		
+	def read_variable_assignment(self, left_hand):
 		# keep reading until we absorb the full value (ended by semicolon)
-		variable_assignment = VariableAssignment(variable_name)
-		self.tokenize(stop_ats=stop_ats + [semicolon], state=0b100, tree=variable_assignment)
-		return variable_assignment
+		expression = VariableAssignmentExpression(left_hand)
+		self.tokenize(stop_ats=[semicolon], tree=expression)
+		return expression
 
 	def read_string(self):
 		has_ended = False
-		output = ['']
+		output = [''] # list of values with templates inbetween them
 		template_literal = None
 		while has_ended == False:
 			char = self.file.read_character(ignore_whitespace=False)
@@ -56,13 +39,16 @@ class Tokenizer:
 				continue
 			elif template_literal_token.match(char):
 				if template_literal == None:
-					template_literal = TemplateLiteral()
-				self.tokenize(stop_ats=[template_literal_token], state=0b100, tree=template_literal)
+					template_literal = TemplateLiteral() # create template literal if we don't have one
+				# tokenize b/c we're parsing runnable code
+				self.tokenize(stop_ats=[template_literal_token], tree=template_literal)
+				# move the templates over to a new list
 				template_literal.add_template()
+				# add a new value
 				output.append('')
-			elif string_token.match(char):
+			elif string_token.match(char): # find the last "/'
 				has_ended = True
-			else:
+			else: # add to the value
 				output[len(output) - 1] = output[len(output) - 1] + char
 
 		if template_literal == None:
@@ -70,54 +56,61 @@ class Tokenizer:
 		else:
 			template_literal.strings = output
 			return template_literal
+	
+	def build_chaining_expression(self, first_symbol_name):
+		chaining_expression = ChainingExpression()
+		chaining_expression.expressions.append(self.get_symbol(first_symbol_name))
+		buffer = ""
+		while buffer == "" or valid_symbol.match(buffer):
+			buffer = buffer + self.file.read_character(ignore_whitespace=True)
+			if chaining_token.match(buffer[-1]):
+				chaining_expression.expressions.append(self.get_symbol(buffer[0:-1]))
+				buffer = ""
 		
-	'''
-	state bitmask
+		chaining_expression.expressions.append(self.get_symbol(buffer[0:-1]))
+		self.file.give_character_back()
+		return chaining_expression
+	
+	def get_symbol(self, symbol_name):
+		if variable_token.match(symbol_name[0]):
+			return VariableSymbol(symbol_name)
+		else:
+			return Symbol(symbol_name)
 
-	1st: we're in neutral state (waiting for variable assignment, method call, etc)
-	2st: stop after we have first tree value
-	3nd: general expression
-	'''
-	def tokenize(self, stop_ats=[], state=0b1, tree=None):
+	def tokenize(self, stop_ats=[], tree=None):
 		self.buffer = ""
 		while True:
-			if tree != None and state & 0b10:
-				return tree
-			
 			char = ''
 			try:
 				char = self.file.read_character()
 			except:
 				print("Finished file")
 				break
-				
+			
 			for stop_at in stop_ats:
 				if stop_at.match(char):
-					# special cases when we hit a stop character
-					if digits.match(self.buffer) and state & 0b100:
-						self.dump_buffer(tree)
-						return tree
-					else:
-						return tree
+					self.absorb_buffer(tree)
+					return tree
 
-			# we're dealing with a variable assignment
-			if variable_token.match(char) and state & 0b1:
-				variable_assignment = self.read_variable_assignment(stop_ats)
-				if tree != None:
-					tree.expressions.append(variable_assignment)
-				elif state & 0b10:
-					return variable_assignment
-			# we're dealing with a string during general expression
-			elif string_token.match(char) and state & 0b100:
+			if chaining_token.match(char): # handle chaining (%test.test.test.test...)
+				if valid_symbol.match(self.buffer):
+					# if we have a valid symbol, then build chaining expression from remaining valid symbols
+					tree.expressions.append(self.build_chaining_expression(self.buffer))
+					self.buffer = "" # absorb buffer
+				else:
+					raise TokenizerException(self, f"Invalid symbol '{self.buffer}'")
+			elif assignment_token.match(char): # handle variable assignment
+				self.absorb_buffer(tree)
+				
+				# take last expression and use that as left hand for variable assignment
+				last_expression = tree.expressions.pop()
+				tree.expressions.append(self.read_variable_assignment(last_expression))
+			elif string_token.match(char): # handle strings
 				string = self.read_string()
 				tree.expressions.append(string)
-			# we're dealing with a variable reference during general expression
-			elif variable_token.match(char) and state & 0b100:
-				tree.expressions.append(Variable(self.read_variable_name()))
-			# we're dealing with operators
-			elif operator_token.match(char) and state & 0b100:
-				self.dump_buffer(tree)
+			elif operator_token.match(char): # handle operators
+				self.absorb_buffer(tree)
 				tree.expressions.append(OperatorExpression(char))
-			else:
+			else: # when in doubt, add to buffer
 				self.buffer = self.buffer + char
 		return tree
