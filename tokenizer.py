@@ -98,7 +98,8 @@ class Tokenizer:
 				has_match = True
 			elif match == None and has_match:
 				self.file.give_character_back()
-				return OperatorExpression(buffer[0:-1])
+				match = valid_operator.match(buffer[0:-1])
+				return OperatorExpression(match.group(0))
 		
 		for i in range(0, 5):
 			self.file.give_character_back()
