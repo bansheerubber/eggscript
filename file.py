@@ -10,12 +10,6 @@ class File:
 	def read_line(self):
 		line = self.file.readline()
 		self.line_count = self.line_count + 1
-		# TODO: remove me
-		while line[0] == "#":
-			line = self.file.readline()
-			if not line:
-				raise Exception("EOF")
-
 		if not line:
 			raise Exception("EOF")
 		else:

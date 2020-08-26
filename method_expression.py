@@ -14,7 +14,7 @@ class MethodExpression:
 	def __str__(self):
 		return f"MethodExpression({self.method_name}, {self.arguments})"
 	
-	def __repr(self):
+	def __repr__(self):
 		return self.__str__()
 	
 	def to_script(self):

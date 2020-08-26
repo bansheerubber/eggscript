@@ -13,4 +13,9 @@ class ChainingExpression:
 		output = ""
 		for expression in self.expressions:
 			output = output + expression.to_script() + "."
-		return output[0:-1]
+		
+		semicolon = ""
+		if hasattr(self.parent, "code_block"):
+			semicolon = ";"
+
+		return output[0:-1] + semicolon

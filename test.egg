@@ -3,7 +3,7 @@
 %hey = "im cool";
 $hey = "im cool";
 
-%hello = "hey how are \{%egg + 25\} you doing {%lol}";
+%hello = "hey how are {%egg + 25} you doing {%lol}";
 %hey2 = 5;
 
 %test2 = (15 + 25) + 2;
@@ -11,3 +11,7 @@ $hey = "im cool";
 %test = %hey + (%hey2 / 5 + (5 + 15));
 
 frog(%test2, %test, (%hello + hey2), nested(5, 6, 7), %martial_arts, "hey how are {%egg + 25} you doing {%lol}", %hey3 = 5);
+
+%test.hello(5);
+
+%eggbert.frog(%test2, %test, (%hello + hey2), nested(5, 6, 7), %martial_arts, "hey how are {%egg + 25} you doing {%lol}", %hey3 = 5);

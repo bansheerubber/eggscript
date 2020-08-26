@@ -6,7 +6,7 @@ from operator_expression import OperatorExpression
 from parentheses_expression import ParenthesesExpression
 from template_literal import TemplateLiteral
 from tokenizer_exception import TokenizerException
-from regex import assignment_token, chaining_token, closing_parenthesis_token, comma_token, digits, opening_parenthesis_token, operator_token, template_literal_token, semicolon_token, string_token, valid_symbol, variable_token
+from regex import assignment_token, chaining_token, closing_parenthesis_token, comma_token, digits, opening_parenthesis_token, operator_token, parentheses_token, template_literal_token, semicolon_token, string_token, valid_symbol, variable_token
 from symbol import Symbol
 from variable_assignment_expression import VariableAssignmentExpression
 from variable_symbol import VariableSymbol
@@ -38,7 +38,7 @@ class Tokenizer:
 	
 	def read_method_expression(self, method_name):
 		expression = MethodExpression(method_name)
-		self.tokenize(stop_ats=[closing_parenthesis_token], tree=expression)
+		self.tokenize(stop_ats=[closing_parenthesis_token], give_back_stop_ats=[semicolon_token], tree=expression)
 		expression.convert_expressions_to_arguments()
 		return expression
 
@@ -75,15 +75,14 @@ class Tokenizer:
 	def build_chaining_expression(self, first_symbol_name):
 		chaining_expression = ChainingExpression()
 		self.add_expression(chaining_expression, self.get_symbol(first_symbol_name))
-		buffer = ""
-		while buffer == "" or valid_symbol.match(buffer):
-			buffer = buffer + self.file.read_character(ignore_whitespace=True)
-			if chaining_token.match(buffer[-1]):
-				self.add_expression(chaining_expression, self.get_symbol(buffer[0:-1]))
-				buffer = ""
-		
-		self.add_expression(chaining_expression, self.get_symbol(buffer[0:-1]))
-		self.file.give_character_back()
+		try:
+			self.file.give_character_back()
+			while self.file.read_character() == ".":
+				self.tokenize([semicolon_token], [chaining_token, operator_token, assignment_token], tree=chaining_expression)
+			self.file.give_character_back()
+		except:
+			pass # if we hit an EOF, just ignore it
+
 		return chaining_expression
 	
 	def get_symbol(self, symbol_name):
@@ -95,6 +94,9 @@ class Tokenizer:
 	def add_expression(self, tree, expression):
 		tree.expressions.append(expression)
 		expression.parent = tree
+	
+	def update_last_expression(self, tree, new_expression):
+		self.add_expression(new_expression, tree.expressions.pop())
 
 	def tokenize(self, stop_ats=[], give_back_stop_ats=[], tree=None):
 		self.buffer = ""
@@ -123,25 +125,27 @@ class Tokenizer:
 					self.add_expression(tree, self.build_chaining_expression(self.buffer))
 					self.buffer = "" # absorb buffer
 				else:
-					raise TokenizerException(self, f"Invalid symbol '{self.buffer}'")
+					raise TokenizerException(self, f"Invalid symbol for chain expression '{self.buffer}'")
 			elif semicolon_token.match(char):
 				# just absorb the character and move on, we have automatic semicolon placement
 				self.absorb_buffer(tree)
 			elif assignment_token.match(char): # handle variable assignment
 				self.absorb_buffer(tree)
-				
 				# take last expression and use that as left hand for variable assignment
 				last_expression = tree.expressions.pop()
-				self.add_expression(tree, self.read_variable_assignment(last_expression, stop_ats))
+				new_expression = self.read_variable_assignment(last_expression, stop_ats)
+				last_expression.parent = new_expression
+				self.add_expression(tree, new_expression)
 			elif string_token.match(char): # handle strings
 				string = self.read_string()
 				self.add_expression(tree, string)
-			elif operator_token.match(char): # handle operators
+			elif parentheses_token.match(char):
 				if opening_parenthesis_token.match(char) and valid_symbol.match(self.buffer) == None: # handle math parentheses
 					self.add_expression(tree, self.read_parentheses_expression())
 				elif opening_parenthesis_token.match(char) and valid_symbol.match(self.buffer) != None: # handle method parentheses
 					self.add_expression(tree, self.read_method_expression(self.buffer))
-				elif comma_token.match(char) and type(tree) is MethodExpression: # handle commas in special case
+			elif operator_token.match(char): # handle operators
+				if comma_token.match(char) and type(tree) is MethodExpression: # handle commas in special case
 					self.absorb_buffer(tree)
 					tree.convert_expressions_to_arguments()
 				else:
