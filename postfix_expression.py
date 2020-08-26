@@ -1,4 +1,6 @@
-class PostfixExpression:
+from expression import Expression
+
+class PostfixExpression(Expression):
 	def __init__(self, expression, operator):
 		self.expression = expression
 		self.operator = operator
@@ -10,8 +12,4 @@ class PostfixExpression:
 		return self.__str__()
 	
 	def to_script(self):
-		semicolon = ""
-		if hasattr(self.parent, "code_block"):
-			semicolon = ";"
-
-		return f"{self.expression.to_script()}{self.operator.to_script().strip()}{semicolon}"
+		return f"{self.expression.to_script()}{self.operator.to_script().strip()}{self.handle_semicolon()}"

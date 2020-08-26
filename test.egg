@@ -1,3 +1,12 @@
+if(%egg && %egg2) {
+	%hello = 50013290;
+} else if(true) {
+	echo("how are you");
+}
+else {
+	echo ("eggly");
+}
+
 %test.hello.hey = "5";
 
 %hey = 1 && 2 || 3 ^ 4 & 5 | 6 == 7 != 8 >= 9 <= 10 $= "hey" !$= "egg";

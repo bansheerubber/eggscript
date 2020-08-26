@@ -1,4 +1,6 @@
-class VariableAssignmentExpression:
+from expression import Expression
+
+class VariableAssignmentExpression(Expression):
 	def __init__(self, assignment_operator, left_hand_expression):
 		self.assignment_operator = assignment_operator
 		self.left_hand_expression = left_hand_expression
@@ -19,8 +21,4 @@ class VariableAssignmentExpression:
 		if value == "":
 			raise Exception(f"Could not find value for variable assignment '{self.left_hand_expression}'")
 
-		semicolon = ""
-		if hasattr(self.parent, "code_block"):
-			semicolon = ";"
-
-		return f"{self.left_hand_expression.to_script()}{self.assignment_operator.to_script()}{value}{semicolon}" 
+		return f"{self.left_hand_expression.to_script()}{self.assignment_operator.to_script()}{value}{self.handle_semicolon()}" 

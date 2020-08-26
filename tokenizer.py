@@ -1,4 +1,5 @@
 from chaining_expression import ChainingExpression
+from conditional_expression import ConditionalExpression
 from file import File
 from literal import Literal
 from method_expression import MethodExpression
@@ -7,7 +8,7 @@ from parentheses_expression import ParenthesesExpression
 from postfix_expression import PostfixExpression
 from template_literal import TemplateLiteral
 from tokenizer_exception import TokenizerException
-from regex import chaining_token, closing_parenthesis_token, comma_token, digits, opening_parenthesis_token, operator_token, parentheses_token, template_literal_token, semicolon_token, string_token, valid_assignment, valid_operator, valid_postfix, valid_symbol, variable_token
+from regex import chaining_token, closing_bracket_token, closing_parenthesis_token, comma_token, digits, opening_parenthesis_token, operator_token, parentheses_token, template_literal_token, semicolon_token, string_token, valid_assignment, valid_conditional, valid_operator, valid_postfix, valid_symbol, variable_token
 from symbol import Symbol
 from variable_assignment_expression import VariableAssignmentExpression
 from variable_symbol import VariableSymbol
@@ -26,6 +27,28 @@ class Tokenizer:
 		elif valid_symbol.match(self.buffer):
 			self.add_expression(tree, self.get_symbol(self.buffer))
 			self.buffer = ""
+	
+	def read_conditional(self, buffer):
+		expression = ConditionalExpression()
+		if buffer == "else":
+			self.file.give_character_back()
+			buffer = buffer + " " + self.file.read_character() + self.file.read_character()
+			if buffer != "else if":
+				self.file.give_character_back()
+				self.file.give_character_back()
+				buffer = "else"
+		
+		expression.type = buffer
+
+		if buffer != "else":
+			self.file.read_character()
+			self.tokenize(stop_ats=[closing_parenthesis_token], tree=expression)
+			expression.move_expressions()
+
+		self.file.read_character() # absorb first "{"
+		self.tokenize(stop_ats=[closing_bracket_token], tree=expression)
+
+		return expression
 
 	def read_variable_assignment(self, operator, left_hand, stop_ats):
 		# keep reading until we absorb the full value (ended by semicolon)
@@ -168,6 +191,8 @@ class Tokenizer:
 							self.add_expression(tree, new_expression)
 						else:
 							self.add_expression(tree, operator)
+			elif valid_conditional.match(self.buffer): # handle conditionals
+				self.add_expression(tree, self.read_conditional(self.buffer))
 			elif chaining_token.match(char): # handle chaining (%test.test.test.test...)
 				if valid_symbol.match(self.buffer):
 					# if we have a valid symbol, then build chaining expression from remaining valid symbols

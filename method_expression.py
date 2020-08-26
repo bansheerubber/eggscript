@@ -1,4 +1,6 @@
-class MethodExpression:
+from expression import Expression
+
+class MethodExpression(Expression):
 	def __init__(self, method_name):
 		self.method_name = method_name
 		self.expressions = []
@@ -21,9 +23,5 @@ class MethodExpression:
 		value = "  "
 		for argument in self.arguments:
 			value = (value + argument.to_script() + ", ")
-		
-		semicolon = ""
-		if hasattr(self.parent, "code_block"):
-			semicolon = ";"
 
-		return f"{self.method_name}({value[0:-2].strip()}){semicolon}"
+		return f"{self.method_name}({value[0:-2].strip()}){self.handle_semicolon()}"

@@ -1,4 +1,6 @@
-class ChainingExpression:
+from expression import Expression
+
+class ChainingExpression(Expression):
 	def __init__(self):
 		self.expressions = []
 		self.parent = None
@@ -13,9 +15,5 @@ class ChainingExpression:
 		output = ""
 		for expression in self.expressions:
 			output = output + expression.to_script() + "."
-		
-		semicolon = ""
-		if hasattr(self.parent, "code_block"):
-			semicolon = ";"
 
-		return output[0:-1] + semicolon
+		return output[0:-1] + self.handle_semicolon()
