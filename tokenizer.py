@@ -4,9 +4,10 @@ from literal import Literal
 from method_expression import MethodExpression
 from operator_expression import OperatorExpression
 from parentheses_expression import ParenthesesExpression
+from postfix_expression import PostfixExpression
 from template_literal import TemplateLiteral
 from tokenizer_exception import TokenizerException
-from regex import chaining_token, closing_parenthesis_token, comma_token, digits, opening_parenthesis_token, operator_token, parentheses_token, template_literal_token, semicolon_token, string_token, valid_assignment, valid_operator, valid_symbol, variable_token
+from regex import chaining_token, closing_parenthesis_token, comma_token, digits, opening_parenthesis_token, operator_token, parentheses_token, template_literal_token, semicolon_token, string_token, valid_assignment, valid_operator, valid_postfix, valid_symbol, variable_token
 from symbol import Symbol
 from variable_assignment_expression import VariableAssignmentExpression
 from variable_symbol import VariableSymbol
@@ -156,6 +157,12 @@ class Tokenizer:
 							# take last expression and use that as left hand for variable assignment
 							last_expression = tree.expressions.pop()
 							new_expression = self.read_variable_assignment(operator, last_expression, stop_ats)
+							last_expression.parent = new_expression
+							self.add_expression(tree, new_expression)
+						elif valid_postfix.match(operator.operator):
+							# take last expression and use that for postfix operation
+							last_expression = tree.expressions.pop()
+							new_expression = PostfixExpression(last_expression, operator)
 							last_expression.parent = new_expression
 							self.add_expression(tree, new_expression)
 						else:
