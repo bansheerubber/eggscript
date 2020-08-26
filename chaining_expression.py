@@ -5,6 +5,9 @@ class ChainingExpression:
 	def __str__(self):
 		return f"ChainingExpression({self.expressions})"
 	
+	def __repr__(self):
+		return self.__str__()
+	
 	def to_script(self):
 		output = ""
 		for expression in self.expressions:

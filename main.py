@@ -7,6 +7,7 @@ def tokenize_file(filename):
 	script_file = ScriptFile(filename)
 	tokenizer = Tokenizer(file)
 	tokenizer.tokenize(tree=script_file)
+	script_file.debug()
 	print(script_file.to_script())
 
 tokenize_file("test.egg")

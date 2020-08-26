@@ -7,6 +7,9 @@ class Literal:
 	def __str__(self):
 		return f"Literal({self.value})"
 	
+	def __repr__(self):
+		return self.__str__()
+	
 	def to_script(self):
 		if digits.match(self.value):
 			return self.value

@@ -9,6 +9,9 @@ class TemplateLiteral:
 	def __str__(self):
 		return f"TemplateLiteral({self.strings}, {self.templates})"
 	
+	def __repr__(self):
+		return self.__str__()
+	
 	def add_template(self):
 		self.templates.append(self.expressions)
 		self.expressions = []

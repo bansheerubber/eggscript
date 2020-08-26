@@ -1,10 +1,9 @@
-class VariableAssignmentExpression:
-	def __init__(self, left_hand_expression):
-		self.left_hand_expression = left_hand_expression
+class ParenthesesExpression:
+	def __init__(self):
 		self.expressions = []
 	
 	def __str__(self):
-		return f"VariableAssignment({self.left_hand_expression}, {self.expressions})"
+		return f"ParenthesesExpression({self.expressions})"
 	
 	def __repr__(self):
 		return self.__str__()
@@ -17,4 +16,4 @@ class VariableAssignmentExpression:
 		if value == "":
 			raise Exception(f"Could not find value for variable assignment '{self.left_hand_expression}'")
 
-		return f"{self.left_hand_expression.to_script()} = {value};"
+		return f"({value})"
