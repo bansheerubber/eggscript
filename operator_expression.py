@@ -10,4 +10,4 @@ class OperatorExpression:
 		return self.__str__()
 	
 	def to_script(self):
-		return f" {self.operator} "
+		return f" {self.operator.strip()} "

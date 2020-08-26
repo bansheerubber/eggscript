@@ -1,5 +1,6 @@
 class VariableAssignmentExpression:
-	def __init__(self, left_hand_expression):
+	def __init__(self, assignment_operator, left_hand_expression):
+		self.assignment_operator = assignment_operator
 		self.left_hand_expression = left_hand_expression
 		self.expressions = []
 		self.parent = None
@@ -22,4 +23,4 @@ class VariableAssignmentExpression:
 		if hasattr(self.parent, "code_block"):
 			semicolon = ";"
 
-		return f"{self.left_hand_expression.to_script()} = {value}{semicolon}" 
+		return f"{self.left_hand_expression.to_script()}{self.assignment_operator.to_script()}{value}{semicolon}" 

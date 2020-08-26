@@ -4,6 +4,7 @@ class File:
 	def __init__(self, filename):
 		self.file = open(filename, "r")
 		self.current_line = None
+		self.current_line_index = 0
 		self.line_count = 0
 		self.current_index = 0
 	
@@ -18,6 +19,7 @@ class File:
 	def read_character(self, ignore_whitespace=True):
 		if self.current_line == None or len(self.current_line) <= self.current_index:
 			self.current_line = self.read_line()
+			self.current_line_index = self.current_line_index + 1
 			self.current_index = 0
 		
 		char = self.current_line[self.current_index]
