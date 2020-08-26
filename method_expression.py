@@ -4,6 +4,7 @@ class MethodExpression:
 		self.expressions = []
 		self.arguments = []
 		self.no_new_line = True # supress newlines TODO remove need for this
+		self.parent = None
 	
 	def convert_expressions_to_arguments(self):
 		for expression in self.expressions:
@@ -20,5 +21,9 @@ class MethodExpression:
 		value = "  "
 		for argument in self.arguments:
 			value = (value + argument.to_script() + ", ")
+		
+		semicolon = ""
+		if hasattr(self.parent, "code_block"):
+			semicolon = ";"
 
-		return f"{self.method_name}({value[0:-2].strip()})"
+		return f"{self.method_name}({value[0:-2].strip()}){semicolon}"

@@ -1,6 +1,7 @@
 class VariableSymbol:
 	def __init__(self, name):
 		self.name = name
+		self.parent = None
 	
 	def __str__(self):
 		return f"VariableSymbol({self.name})"

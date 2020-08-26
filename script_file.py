@@ -2,6 +2,8 @@ class ScriptFile:
 	def __init__(self, filename):
 		self.expressions = []
 		self.filename = filename
+		self.parent = None
+		self.code_block = True
 	
 	def __str__(self):
 		return f"ScriptFile({self.filename})"
@@ -16,9 +18,5 @@ class ScriptFile:
 	def to_script(self):
 		output = ""
 		for expression in self.expressions:
-			new_line = "\n"
-			if hasattr(expression, "no_new_line") == True:
-				new_line = ""
-			
-			output = output + expression.to_script() + new_line
+			output = output + expression.to_script() + "\n"
 		return output

@@ -1,6 +1,7 @@
 class OperatorExpression:
 	def __init__(self, operator):
 		self.operator = operator
+		self.parent = None
 	
 	def __str__(self):
 		return f"Operator({self.operator})"
@@ -9,4 +10,4 @@ class OperatorExpression:
 		return self.__str__()
 	
 	def to_script(self):
-		return f"{self.operator}"
+		return f" {self.operator} "

@@ -5,6 +5,7 @@ class TemplateLiteral:
 		self.strings = []
 		self.expressions = []
 		self.templates = []
+		self.parent = None
 	
 	def __str__(self):
 		return f"TemplateLiteral({self.strings}, {self.templates})"

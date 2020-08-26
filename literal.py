@@ -3,6 +3,7 @@ from regex import digits
 class Literal:
 	def __init__(self, value):
 		self.value = value
+		self.parent = None
 	
 	def __str__(self):
 		return f"Literal({self.value})"

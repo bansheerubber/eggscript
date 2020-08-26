@@ -6,7 +6,7 @@ from operator_expression import OperatorExpression
 from parentheses_expression import ParenthesesExpression
 from template_literal import TemplateLiteral
 from tokenizer_exception import TokenizerException
-from regex import assignment_token, chaining_token, closing_parenthesis_token, comma_token, digits, opening_parenthesis_token, operator_token, template_literal_token, semicolon, string_token, valid_symbol, variable_token
+from regex import assignment_token, chaining_token, closing_parenthesis_token, comma_token, digits, opening_parenthesis_token, operator_token, template_literal_token, semicolon_token, string_token, valid_symbol, variable_token
 from symbol import Symbol
 from variable_assignment_expression import VariableAssignmentExpression
 from variable_symbol import VariableSymbol
@@ -19,16 +19,16 @@ class Tokenizer:
 		if self.buffer.strip() == "":
 			self.buffer = ""
 		elif digits.match(self.buffer):
-			tree.expressions.append(Literal(self.buffer))
+			self.add_expression(tree, Literal(self.buffer))
 			self.buffer = ""
 		elif valid_symbol.match(self.buffer):
-			tree.expressions.append(self.get_symbol(self.buffer))
+			self.add_expression(tree, self.get_symbol(self.buffer))
 			self.buffer = ""
 
 	def read_variable_assignment(self, left_hand, stop_ats):
 		# keep reading until we absorb the full value (ended by semicolon)
 		expression = VariableAssignmentExpression(left_hand)
-		self.tokenize(stop_ats=[semicolon] + stop_ats, tree=expression)
+		self.tokenize(stop_ats=[semicolon_token] + stop_ats, give_back_stop_ats=[regex for regex in stop_ats if regex != semicolon_token], tree=expression)
 		return expression
 	
 	def read_parentheses_expression(self):
@@ -74,15 +74,15 @@ class Tokenizer:
 	
 	def build_chaining_expression(self, first_symbol_name):
 		chaining_expression = ChainingExpression()
-		chaining_expression.expressions.append(self.get_symbol(first_symbol_name))
+		self.add_expression(chaining_expression, self.get_symbol(first_symbol_name))
 		buffer = ""
 		while buffer == "" or valid_symbol.match(buffer):
 			buffer = buffer + self.file.read_character(ignore_whitespace=True)
 			if chaining_token.match(buffer[-1]):
-				chaining_expression.expressions.append(self.get_symbol(buffer[0:-1]))
+				self.add_expression(chaining_expression, self.get_symbol(buffer[0:-1]))
 				buffer = ""
 		
-		chaining_expression.expressions.append(self.get_symbol(buffer[0:-1]))
+		self.add_expression(chaining_expression, self.get_symbol(buffer[0:-1]))
 		self.file.give_character_back()
 		return chaining_expression
 	
@@ -91,8 +91,12 @@ class Tokenizer:
 			return VariableSymbol(symbol_name)
 		else:
 			return Symbol(symbol_name)
+	
+	def add_expression(self, tree, expression):
+		tree.expressions.append(expression)
+		expression.parent = tree
 
-	def tokenize(self, stop_ats=[], tree=None):
+	def tokenize(self, stop_ats=[], give_back_stop_ats=[], tree=None):
 		self.buffer = ""
 		while True:
 			char = ''
@@ -101,6 +105,12 @@ class Tokenizer:
 			except:
 				print("Finished file")
 				break
+		
+			for stop_at in give_back_stop_ats:
+				if stop_at.match(char):
+					self.absorb_buffer(tree)
+					self.file.give_character_back()
+					return tree
 			
 			for stop_at in stop_ats:
 				if stop_at.match(char):
@@ -110,30 +120,33 @@ class Tokenizer:
 			if chaining_token.match(char): # handle chaining (%test.test.test.test...)
 				if valid_symbol.match(self.buffer):
 					# if we have a valid symbol, then build chaining expression from remaining valid symbols
-					tree.expressions.append(self.build_chaining_expression(self.buffer))
+					self.add_expression(tree, self.build_chaining_expression(self.buffer))
 					self.buffer = "" # absorb buffer
 				else:
 					raise TokenizerException(self, f"Invalid symbol '{self.buffer}'")
+			elif semicolon_token.match(char):
+				# just absorb the character and move on, we have automatic semicolon placement
+				self.absorb_buffer(tree)
 			elif assignment_token.match(char): # handle variable assignment
 				self.absorb_buffer(tree)
 				
 				# take last expression and use that as left hand for variable assignment
 				last_expression = tree.expressions.pop()
-				tree.expressions.append(self.read_variable_assignment(last_expression, stop_ats))
+				self.add_expression(tree, self.read_variable_assignment(last_expression, stop_ats))
 			elif string_token.match(char): # handle strings
 				string = self.read_string()
-				tree.expressions.append(string)
+				self.add_expression(tree, string)
 			elif operator_token.match(char): # handle operators
 				if opening_parenthesis_token.match(char) and valid_symbol.match(self.buffer) == None: # handle math parentheses
-					tree.expressions.append(self.read_parentheses_expression())
+					self.add_expression(tree, self.read_parentheses_expression())
 				elif opening_parenthesis_token.match(char) and valid_symbol.match(self.buffer) != None: # handle method parentheses
-					tree.expressions.append(self.read_method_expression(self.buffer))
+					self.add_expression(tree, self.read_method_expression(self.buffer))
 				elif comma_token.match(char) and type(tree) is MethodExpression: # handle commas in special case
 					self.absorb_buffer(tree)
 					tree.convert_expressions_to_arguments()
 				else:
 					self.absorb_buffer(tree)
-					tree.expressions.append(OperatorExpression(char))
+					self.add_expression(tree, OperatorExpression(char))
 			else: # when in doubt, add to buffer
 				self.buffer = self.buffer + char
 		return tree

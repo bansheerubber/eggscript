@@ -1,6 +1,7 @@
 class ChainingExpression:
 	def __init__(self):
 		self.expressions = []
+		self.parent = None
 	
 	def __str__(self):
 		return f"ChainingExpression({self.expressions})"
