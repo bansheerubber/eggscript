@@ -5,3 +5,4 @@ eggscript is an extension of TorqueScript, adding various new features which mak
 features include:
 - string templates. i.e. ```%variable = "Welcome to {%client.getPlayerName()}'s server!";``` will polyfill to ```%variable = "Welcome to " @ %client.getPlayerName() @ "'s server!";```
 - minification (https://pastebin.com/raw/geHekwLz)
+- de-minification or prettify
