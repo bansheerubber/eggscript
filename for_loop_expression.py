@@ -1,3 +1,4 @@
+from config import get_config
 from expression import Expression
 
 class ForLoopExpression(Expression):
@@ -28,6 +29,14 @@ class ForLoopExpression(Expression):
 	
 	def to_script(self):
 		full_output = ""
+
+		newline = "\n"
+		space = " "
+		tab = "\t"
+		if get_config("minify") == True:
+			newline = ""
+			space = ""
+			tab = ""
 		
 		initiation_output = ""
 		for initiation_expression in self.initiation_expressions:
@@ -41,13 +50,13 @@ class ForLoopExpression(Expression):
 		for increment_expression in self.increment_expressions:
 			increment_output = increment_output + increment_expression.to_script()
 		
-		full_output = f"for({initiation_output}; {conditional_output}; {increment_output})"
-		full_output = full_output + " {\n"
+		full_output = f"for({initiation_output};{space}{conditional_output};{space}{increment_output})"
+		full_output = full_output + space + "{" + newline
 		
 		output = ""
 		for expression in self.expressions:
-			output = output + ("\t" * self.get_indent_level()) + expression.to_script() + "\n"
+			output = output + (tab * self.get_indent_level()) + expression.to_script() + newline
 		
-		full_output = full_output + output[0:-1] + "\n" + ("\t" * (self.get_indent_level() - 1)) + "}"
+		full_output = full_output + output + (tab * (self.get_indent_level() - 1)) + "}"
 
 		return full_output

@@ -1,3 +1,5 @@
+from config import get_config
+
 class ScriptFile:
 	def __init__(self, filename):
 		self.expressions = []
@@ -16,7 +18,11 @@ class ScriptFile:
 			print(expression)
 
 	def to_script(self):
+		newline = "\n"
+		if get_config("minify") == True:
+			newline = ""
+		
 		output = ""
 		for expression in self.expressions:
-			output = output + expression.to_script() + "\n"
+			output = output + expression.to_script() + newline
 		return output

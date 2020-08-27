@@ -1,3 +1,5 @@
+from config import get_config
+
 class OperatorExpression:
 	def __init__(self, operator):
 		self.operator = operator
@@ -10,4 +12,8 @@ class OperatorExpression:
 		return self.__str__()
 	
 	def to_script(self):
-		return f" {self.operator.strip()} "
+		space = " "
+		if get_config("minify") == True:
+			space = ""
+		
+		return f"{space}{self.operator.strip()}{space}"

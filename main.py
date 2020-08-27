@@ -2,6 +2,10 @@ from file import File
 from tokenizer import Tokenizer
 from script_file import ScriptFile
 
+from config import set_config
+
+set_config("minify", True)
+
 def tokenize_file(filename):
 	file = File(filename)
 	script_file = ScriptFile(filename)

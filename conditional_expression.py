@@ -1,3 +1,4 @@
+from config import get_config
 from expression import Expression
 
 class ConditionalExpression(Expression):
@@ -19,20 +20,28 @@ class ConditionalExpression(Expression):
 	
 	def to_script(self):
 		full_output = ""
+
+		newline = "\n"
+		space = " "
+		tab = "\t"
+		if get_config("minify") == True:
+			newline = ""
+			space = ""
+			tab = ""
 		
 		if self.type != "else":
 			output = ""
 			for conditional_expression in self.conditional_expressions:
 				output = output + conditional_expression.to_script()
 			
-			full_output = self.type + "(" + output + ") {\n"
+			full_output = self.type + "(" + output + ")" + space + "{" + newline
 		else:
-			full_output = self.type + " {\n"
+			full_output = self.type + space + "{" + newline
 		
 		output = ""
 		for expression in self.expressions:
-			output = output + ("\t" * self.get_indent_level()) + expression.to_script() + "\n"
+			output = output + (tab * self.get_indent_level()) + expression.to_script() + newline
 		
-		full_output = full_output + output[0:-1] + "\n" + ("\t" * (self.get_indent_level() - 1)) + "}"
+		full_output = full_output + output + (tab * (self.get_indent_level() - 1)) + "}"
 
 		return full_output
