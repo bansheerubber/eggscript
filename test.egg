@@ -1,39 +1,8 @@
-if(%egg && %egg2 && %frog.egg) {
-	%hello = 50013290;
-} else if(true) {
-	echo("how are you");
+if(%client.isSuperAdmin) {
+	for(%filename = findFirstFile("Add-Ons/Server_MiniDungeons/*.cs"); %filename !$= ""; %filename = findnextFile("Add-Ons/Server_MiniDungeons/*.cs")) {
+		if(strPos(strLwr(%filename), "/" @ strLwr(trim(%input1 SPC %input2 SPC %input3 SPC %input4)) @ "/") != -1) {
+			exec(%filename);
+			commandtoClient(%client, 'serverMessage', '', "\c5Executed '" @ %filename @ "'.");
+		}
+	}
 }
-else {
-	echo ("eggly");
-}
-
-%test.hello.hey = "5"; // mary had a little lamb
-
-%hey = 1 && 2 || 3 ^ 4 & 5 | 6 == 7 != 8 >= 9 <= 10 $= "hey" !$= "egg";
-
-%hey += 5;
-%hey -= 5;
-%hey /= 5;
-%hey *= 5;
-%hey |= 5;
-%hey &= 5;
-%hey ^= 5;
-%i++;
-%i--;
-
-%hey = "im cool";
-$hey = "im cool" SPC "hey" @ "eggly";
-$SPCNLlol = "cool";
-
-%hello = "hey how are {%egg + 25} you doing {%lol}";
-%hey2 = 5;
-
-%test2 = (15 + 25) + 2;
-
-%test = %hey + (%hey2 / 5 + (5 + 15));
-
-frog(%test2, %test, (%hello + hey2), nested(5, 6, 7), %martial_arts, "hey how are {%egg + 25} you doing {%lol}", %hey3 = 5);
-
-%test.hello(5);
-
-%eggbert.frog(%test2, %test, (%hello + hey2), nested(5, 6, 7), %martial_arts, "hey how are {%egg + 25} you doing {%lol}", %hey3 = 5);

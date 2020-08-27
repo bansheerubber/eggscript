@@ -2,6 +2,7 @@ from chaining_expression import ChainingExpression
 from comment import Comment
 from conditional_expression import ConditionalExpression
 from file import File
+from for_loop_expression import ForLoopExpression
 from literal import Literal
 from method_expression import MethodExpression
 from operator_expression import OperatorExpression
@@ -9,7 +10,7 @@ from parentheses_expression import ParenthesesExpression
 from postfix_expression import PostfixExpression
 from template_literal import TemplateLiteral
 from tokenizer_exception import TokenizerException
-from regex import chaining_token, closing_bracket_token, closing_parenthesis_token, comma_token, digits, opening_parenthesis_token, operator_token, parentheses_token, template_literal_token, semicolon_token, string_token, valid_assignment, valid_conditional, valid_comment, valid_operator, valid_postfix, valid_symbol, variable_token
+from regex import chaining_token, closing_bracket_token, closing_parenthesis_token, comma_token, digits, opening_parenthesis_token, operator_token, parentheses_token, template_literal_token, semicolon_token, string_token, valid_assignment, valid_conditional, valid_comment, valid_for, valid_operator, valid_postfix, valid_symbol, variable_token
 from symbol import Symbol
 from variable_assignment_expression import VariableAssignmentExpression
 from variable_symbol import VariableSymbol
@@ -36,6 +37,23 @@ class Tokenizer:
 		comment = self.file.absorb_line()
 		return Comment(comment)
 	
+	def read_for_loop(self):
+		expression = ForLoopExpression()
+		
+		self.tokenize(stop_ats=[semicolon_token], tree=expression)
+		expression.move_initiation_expressions()
+
+		self.tokenize(stop_ats=[semicolon_token], tree=expression)
+		expression.move_conditional_expressions()
+
+		self.tokenize(stop_ats=[closing_parenthesis_token], tree=expression)
+		expression.move_increment_expressions()
+
+		self.file.read_character() # absorb first "{"
+		self.tokenize(stop_ats=[closing_bracket_token], tree=expression)
+
+		return expression
+	
 	def read_conditional(self, buffer):
 		expression = ConditionalExpression()
 		self.file.give_character_back()
@@ -61,7 +79,7 @@ class Tokenizer:
 	def read_variable_assignment(self, operator, left_hand, stop_ats):
 		# keep reading until we absorb the full value (ended by semicolon)
 		expression = VariableAssignmentExpression(operator, left_hand)
-		self.tokenize(stop_ats=[semicolon_token] + stop_ats, give_back_stop_ats=[regex for regex in stop_ats if regex != semicolon_token], tree=expression)
+		self.tokenize(stop_ats=[semicolon_token] + stop_ats, give_back_stop_ats=[semicolon_token] + stop_ats, tree=expression)
 		return expression
 	
 	def read_parentheses_expression(self):
@@ -94,7 +112,7 @@ class Tokenizer:
 				template_literal.add_template()
 				# add a new value
 				output.append('')
-			elif string_token.match(char): # find the last "/'
+			elif string_token.match(char): # find the last " or '
 				has_ended = True
 			else: # add to the value
 				output[len(output) - 1] = output[len(output) - 1] + char
@@ -203,6 +221,10 @@ class Tokenizer:
 							self.add_expression(tree, operator)
 			elif valid_conditional.match(self.buffer): # handle conditionals
 				self.add_expression(tree, self.read_conditional(self.buffer))
+				self.buffer = ""
+			elif valid_for.match(self.buffer): # handle for loops
+				self.add_expression(tree, self.read_for_loop())
+				self.buffer = ""
 			elif chaining_token.match(char): # handle chaining (%test.test.test.test...)
 				if valid_symbol.match(self.buffer):
 					# if we have a valid symbol, then build chaining expression from remaining valid symbols

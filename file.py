@@ -22,7 +22,6 @@ class File:
 		self.current_line = self.read_line()
 		self.current_line_index = self.current_line_index + 1
 		self.current_index = 0
-		print(self.current_line)
 		return rest
 	
 	def read_character(self, ignore_whitespace=True):
