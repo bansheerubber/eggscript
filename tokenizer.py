@@ -264,7 +264,7 @@ class Tokenizer:
 			match = valid_operator.match(buffer)
 			if match != None:
 				has_match = True
-			elif match == None and has_match and operator_token.match(buffer[-1]) == None:
+			elif match == None and has_match and operator_token.match(buffer[-1]) == None and valid_operator.match(buffer[0:-1]):
 				self.file.give_character_back()
 				match = valid_operator.match(buffer[0:-1])
 				return OperatorExpression(match.group(0))
