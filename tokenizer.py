@@ -261,7 +261,6 @@ class Tokenizer:
 			while self.file.read_character() == ":" and self.file.read_character() == ":":
 				self.tokenize(stop_ats=[], give_back_stop_ats=inheritable_give_back_stop_at + [semicolon_token, namespace_token, operator_token_without_concatenation, closing_parenthesis_token], tree=namespace_expression)
 			self.file.give_character_back()
-			self.file.give_character_back()
 		except:
 			pass # if we hit an EOF, just ignore it
 			
