@@ -4,10 +4,12 @@ from chaining_expression import ChainingExpression
 from comment import Comment
 from conditional_expression import ConditionalExpression
 from continue_expression import ContinueExpression
+from datablock_expression import DatablockExpression
 from default_expression import DefaultExpression
 from file import File
 from for_loop_expression import ForLoopExpression
 from function_expression import FunctionExpression
+from inheritance_expression import InheritanceExpression
 from literal import Literal
 from method_expression import MethodExpression
 from namespace_expression import NamespaceExpression
@@ -17,7 +19,7 @@ from parentheses_expression import ParenthesesExpression
 from postfix_expression import PostfixExpression
 from template_literal import TemplateLiteral
 from tokenizer_exception import TokenizerException
-from regex import chaining_token, closing_bracket_token, closing_parenthesis_token, colon_token, comma_token, digits, keywords, namespace_token, opening_bracket_token, opening_parenthesis_token, operator_token, operator_token_only_concatenation, operator_token_without_concatenation, parentheses_token, template_literal_token, semicolon_token, string_token, valid_assignment, valid_break, valid_case, valid_comment, valid_conditional, valid_continue, valid_default, valid_for, valid_function, valid_operator, valid_package, valid_postfix, valid_return, valid_symbol, valid_switch, valid_switch_string, valid_while, variable_token
+from regex import chaining_token, closing_bracket_token, closing_parenthesis_token, colon_token, comma_token, digits, keywords, namespace_token, opening_bracket_token, opening_parenthesis_token, operator_token, operator_token_only_concatenation, operator_token_without_concatenation, parentheses_token, template_literal_token, semicolon_token, string_token, valid_assignment, valid_break, valid_case, valid_comment, valid_conditional, valid_continue, valid_default, valid_datablock, valid_for, valid_function, valid_operator, valid_package, valid_postfix, valid_return, valid_symbol, valid_switch, valid_switch_string, valid_while, variable_token
 from return_expression import ReturnExpression
 from string_literal import StringLiteral
 from symbol import Symbol
@@ -122,6 +124,32 @@ class Tokenizer:
 		self.tokenize(stop_ats=[opening_bracket_token], tree=expression)
 		expression.convert_expression_to_name()
 
+		self.tokenize(stop_ats=[closing_bracket_token], tree=expression)
+
+		return expression
+	
+	def read_datablock(self):
+		expression = DatablockExpression()
+		self.file.give_character_back()
+
+		self.tokenize(stop_ats=[opening_parenthesis_token], tree=expression)
+		expression.convert_expression_to_class()
+
+		self.tokenize(stop_ats=[closing_parenthesis_token], give_back_stop_ats=[colon_token], tree=expression)
+
+		if self.file.read_character() == ":":
+
+			inheritance_expression = InheritanceExpression()
+			inheritance_expression.child_class = expression.expressions[0]
+			self.tokenize(stop_ats=[closing_parenthesis_token], tree=inheritance_expression)
+			inheritance_expression.convert_expression_to_super_class()
+
+			expression.convert_expression_to_name(expression=inheritance_expression)
+		else:
+			expression.convert_expression_to_name()
+			self.file.give_character_back()
+
+		self.file.read_character() # absorb first "{"
 		self.tokenize(stop_ats=[closing_bracket_token], tree=expression)
 
 		return expression
@@ -358,6 +386,9 @@ class Tokenizer:
 					self.buffer = ""
 				elif valid_break.match(self.buffer): # handle breaks
 					self.add_expression(tree, self.read_break())
+					self.buffer = ""
+				elif valid_datablock.match(self.buffer): # handle datablocks
+					self.add_expression(tree, self.read_datablock())
 					self.buffer = ""
 				
 				continue
