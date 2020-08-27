@@ -1,7 +1,9 @@
+from break_expression import BreakExpression
 from case_expression import CaseExpression
 from chaining_expression import ChainingExpression
 from comment import Comment
 from conditional_expression import ConditionalExpression
+from continue_expression import ContinueExpression
 from default_expression import DefaultExpression
 from file import File
 from for_loop_expression import ForLoopExpression
@@ -15,7 +17,7 @@ from parentheses_expression import ParenthesesExpression
 from postfix_expression import PostfixExpression
 from template_literal import TemplateLiteral
 from tokenizer_exception import TokenizerException
-from regex import chaining_token, closing_bracket_token, closing_parenthesis_token, colon_token, comma_token, digits, keywords, namespace_token, opening_bracket_token, opening_parenthesis_token, operator_token, operator_token_only_concatenation, operator_token_without_concatenation, parentheses_token, template_literal_token, semicolon_token, string_token, valid_assignment, valid_case, valid_conditional, valid_comment, valid_default, valid_for, valid_function, valid_operator, valid_package, valid_postfix, valid_return, valid_symbol, valid_switch, valid_switch_string, valid_while, variable_token
+from regex import chaining_token, closing_bracket_token, closing_parenthesis_token, colon_token, comma_token, digits, keywords, namespace_token, opening_bracket_token, opening_parenthesis_token, operator_token, operator_token_only_concatenation, operator_token_without_concatenation, parentheses_token, template_literal_token, semicolon_token, string_token, valid_assignment, valid_break, valid_case, valid_comment, valid_conditional, valid_continue, valid_default, valid_for, valid_function, valid_operator, valid_package, valid_postfix, valid_return, valid_symbol, valid_switch, valid_switch_string, valid_while, variable_token
 from return_expression import ReturnExpression
 from string_literal import StringLiteral
 from symbol import Symbol
@@ -245,6 +247,14 @@ class Tokenizer:
 		self.tokenize(give_back_stop_ats=[semicolon_token], tree=expression)
 		return expression
 	
+	def read_break(self):
+		self.file.give_character_back()
+		return BreakExpression()
+	
+	def read_continue(self):
+		self.file.give_character_back()
+		return ContinueExpression()
+	
 	def read_operator(self):
 		self.file.give_character_back()
 		buffer = ""
@@ -342,6 +352,12 @@ class Tokenizer:
 					self.buffer = ""
 				elif valid_return.match(self.buffer): # handle returns
 					self.add_expression(tree, self.read_return())
+					self.buffer = ""
+				elif valid_continue.match(self.buffer): # handle continues
+					self.add_expression(tree, self.read_continue())
+					self.buffer = ""
+				elif valid_break.match(self.buffer): # handle breaks
+					self.add_expression(tree, self.read_break())
 					self.buffer = ""
 				
 				continue
