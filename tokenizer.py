@@ -128,7 +128,7 @@ class Tokenizer:
 		expression = FunctionExpression()
 
 		self.file.give_character_back()
-		self.tokenize(stop_ats=[opening_parenthesis_token], tree=expression)
+		self.tokenize(stop_ats=[opening_parenthesis_token], inheritable_give_back_stop_at=[opening_parenthesis_token], tree=expression)
 		expression.convert_expression_to_name()
 
 		self.tokenize(stop_ats=[closing_parenthesis_token], tree=expression)
@@ -211,26 +211,26 @@ class Tokenizer:
 			template_literal.strings = output
 			return template_literal
 	
-	def read_chaining_expression(self, first_symbol_name):
+	def read_chaining_expression(self, first_symbol_name, inheritable_give_back_stop_at):
 		chaining_expression = ChainingExpression()
 		self.add_expression(chaining_expression, self.get_symbol(first_symbol_name))
 		try:
 			self.file.give_character_back()
 			while self.file.read_character() == ".":
-				self.tokenize(stop_ats=[], give_back_stop_ats=[semicolon_token, chaining_token, operator_token_without_concatenation, closing_parenthesis_token], tree=chaining_expression)
+				self.tokenize(stop_ats=[], give_back_stop_ats=inheritable_give_back_stop_at + [semicolon_token, chaining_token, operator_token_without_concatenation, closing_parenthesis_token], tree=chaining_expression)
 			self.file.give_character_back()
 		except:
 			pass # if we hit an EOF, just ignore it
 
 		return chaining_expression
 	
-	def read_namespace_expression(self, first_symbol_name):
+	def read_namespace_expression(self, first_symbol_name, inheritable_give_back_stop_at):
 		namespace_expression = NamespaceExpression()
 		self.add_expression(namespace_expression, self.get_symbol(first_symbol_name))
 		try:
 			self.file.give_character_back()
 			while self.file.read_character() == ":" and self.file.read_character() == ":":
-				self.tokenize(stop_ats=[], give_back_stop_ats=[semicolon_token, namespace_token, operator_token_without_concatenation, closing_parenthesis_token, opening_parenthesis_token], tree=namespace_expression)
+				self.tokenize(stop_ats=[], give_back_stop_ats=inheritable_give_back_stop_at + [semicolon_token, namespace_token, operator_token_without_concatenation, closing_parenthesis_token], tree=namespace_expression)
 			self.file.give_character_back()
 			self.file.give_character_back()
 		except:
@@ -270,7 +270,7 @@ class Tokenizer:
 	def update_last_expression(self, tree, new_expression):
 		self.add_expression(new_expression, tree.expressions.pop())
 
-	def tokenize(self, stop_ats=[], give_back_stop_ats=[], buffer_give_back_stop_at=[], tree=None):
+	def tokenize(self, stop_ats=[], give_back_stop_ats=[], buffer_give_back_stop_at=[], inheritable_give_back_stop_at=[], tree=None):
 		self.buffer = ""
 		while True:
 			char = ''
@@ -377,14 +377,14 @@ class Tokenizer:
 			elif chaining_token.match(char): # handle chaining (%test.test.test.test...)
 				if valid_symbol.match(self.buffer):
 					# if we have a valid symbol, then build chaining expression from remaining valid symbols
-					self.add_expression(tree, self.read_chaining_expression(self.buffer))
+					self.add_expression(tree, self.read_chaining_expression(self.buffer, inheritable_give_back_stop_at))
 					self.buffer = "" # absorb buffer
 				else:
 					raise TokenizerException(self, f"Invalid symbol for chain expression '{self.buffer}'")
 			elif namespace_token.match(char): # handle namespaces ($Test::frog:egg...)
 				if valid_symbol.match(self.buffer):
 					# if we have a valid symbol, then build chaining expression from remaining valid symbols
-					self.add_expression(tree, self.read_namespace_expression(self.buffer))
+					self.add_expression(tree, self.read_namespace_expression(self.buffer, inheritable_give_back_stop_at))
 					self.buffer = "" # absorb buffer
 				else:
 					raise TokenizerException(self, f"Invalid symbol for namespace expression '{self.buffer}'")
