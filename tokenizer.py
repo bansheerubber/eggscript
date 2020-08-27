@@ -155,7 +155,7 @@ class Tokenizer:
 			template_literal.strings = output
 			return template_literal
 	
-	def build_chaining_expression(self, first_symbol_name):
+	def read_chaining_expression(self, first_symbol_name):
 		chaining_expression = ChainingExpression()
 		self.add_expression(chaining_expression, self.get_symbol(first_symbol_name))
 		try:
@@ -177,7 +177,7 @@ class Tokenizer:
 			match = valid_operator.match(buffer)
 			if match != None:
 				has_match = True
-			elif match == None and has_match:
+			elif match == None and has_match and operator_token.match(buffer[-1]) == None:
 				self.file.give_character_back()
 				match = valid_operator.match(buffer[0:-1])
 				return OperatorExpression(match.group(0))
@@ -286,7 +286,7 @@ class Tokenizer:
 			elif chaining_token.match(char): # handle chaining (%test.test.test.test...)
 				if valid_symbol.match(self.buffer):
 					# if we have a valid symbol, then build chaining expression from remaining valid symbols
-					self.add_expression(tree, self.build_chaining_expression(self.buffer))
+					self.add_expression(tree, self.read_chaining_expression(self.buffer))
 					self.buffer = "" # absorb buffer
 				else:
 					raise TokenizerException(self, f"Invalid symbol for chain expression '{self.buffer}'")
