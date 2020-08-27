@@ -6,12 +6,13 @@ from for_loop_expression import ForLoopExpression
 from function_expression import FunctionExpression
 from literal import Literal
 from method_expression import MethodExpression
+from namespace_expression import NamespaceExpression
 from operator_expression import OperatorExpression
 from parentheses_expression import ParenthesesExpression
 from postfix_expression import PostfixExpression
 from template_literal import TemplateLiteral
 from tokenizer_exception import TokenizerException
-from regex import chaining_token, closing_bracket_token, closing_parenthesis_token, comma_token, digits, keywords, opening_parenthesis_token, operator_token, operator_token_only_concatenation, operator_token_without_concatenation, parentheses_token, template_literal_token, semicolon_token, string_token, valid_assignment, valid_conditional, valid_comment, valid_for, valid_function, valid_operator, valid_postfix, valid_symbol, valid_while, variable_token
+from regex import chaining_token, closing_bracket_token, closing_parenthesis_token, comma_token, digits, keywords, namespace_token, opening_parenthesis_token, operator_token, operator_token_only_concatenation, operator_token_without_concatenation, parentheses_token, template_literal_token, semicolon_token, string_token, valid_assignment, valid_conditional, valid_comment, valid_for, valid_function, valid_operator, valid_postfix, valid_symbol, valid_while, variable_token
 from string_literal import StringLiteral
 from symbol import Symbol
 from variable_assignment_expression import VariableAssignmentExpression
@@ -168,6 +169,20 @@ class Tokenizer:
 
 		return chaining_expression
 	
+	def read_namespace_expression(self, first_symbol_name):
+		namespace_expression = NamespaceExpression()
+		self.add_expression(namespace_expression, self.get_symbol(first_symbol_name))
+		try:
+			self.file.give_character_back()
+			while self.file.read_character() == ":" and self.file.read_character() == ":":
+				self.tokenize(stop_ats=[], give_back_stop_ats=[semicolon_token, namespace_token, operator_token_without_concatenation, closing_parenthesis_token, opening_parenthesis_token], tree=namespace_expression)
+			self.file.give_character_back()
+			self.file.give_character_back()
+		except:
+			pass # if we hit an EOF, just ignore it
+			
+		return namespace_expression
+	
 	def read_operator(self):
 		self.file.give_character_back()
 		buffer = ""
@@ -290,6 +305,13 @@ class Tokenizer:
 					self.buffer = "" # absorb buffer
 				else:
 					raise TokenizerException(self, f"Invalid symbol for chain expression '{self.buffer}'")
+			elif namespace_token.match(char): # handle namespaces ($Test::frog:egg...)
+				if valid_symbol.match(self.buffer):
+					# if we have a valid symbol, then build chaining expression from remaining valid symbols
+					self.add_expression(tree, self.read_namespace_expression(self.buffer))
+					self.buffer = "" # absorb buffer
+				else:
+					raise TokenizerException(self, f"Invalid symbol for namespace expression '{self.buffer}'")
 			elif semicolon_token.match(char):
 				# just absorb the character and move on, we have automatic semicolon placement
 				self.absorb_buffer(tree)

@@ -4,7 +4,7 @@ from script_file import ScriptFile
 
 from config import set_config
 
-set_config("minify", True)
+set_config("minify", False)
 
 def tokenize_file(filename):
 	file = File(filename)
