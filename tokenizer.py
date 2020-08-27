@@ -12,6 +12,7 @@ from postfix_expression import PostfixExpression
 from template_literal import TemplateLiteral
 from tokenizer_exception import TokenizerException
 from regex import chaining_token, closing_bracket_token, closing_parenthesis_token, comma_token, digits, keywords, opening_parenthesis_token, operator_token, operator_token_only_concatenation, operator_token_without_concatenation, parentheses_token, template_literal_token, semicolon_token, string_token, valid_assignment, valid_conditional, valid_comment, valid_for, valid_function, valid_operator, valid_postfix, valid_symbol, valid_while, variable_token
+from string_literal import StringLiteral
 from symbol import Symbol
 from variable_assignment_expression import VariableAssignmentExpression
 from variable_symbol import VariableSymbol
@@ -122,6 +123,9 @@ class Tokenizer:
 		return expression
 
 	def read_string(self):
+		self.file.give_character_back()
+		delimiter = self.file.read_character()
+		
 		has_ended = False
 		output = [''] # list of values with templates inbetween them
 		template_literal = None
@@ -140,13 +144,13 @@ class Tokenizer:
 				template_literal.add_template()
 				# add a new value
 				output.append('')
-			elif string_token.match(char): # find the last " or '
+			elif char == delimiter: # find the last " or '
 				has_ended = True
 			else: # add to the value
 				output[len(output) - 1] = output[len(output) - 1] + char
 
 		if template_literal == None:
-			return Literal(output[0])
+			return StringLiteral(output[0], delimiter)
 		else:
 			template_literal.strings = output
 			return template_literal
