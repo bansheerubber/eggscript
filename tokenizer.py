@@ -11,10 +11,11 @@ from parentheses_expression import ParenthesesExpression
 from postfix_expression import PostfixExpression
 from template_literal import TemplateLiteral
 from tokenizer_exception import TokenizerException
-from regex import chaining_token, closing_bracket_token, closing_parenthesis_token, comma_token, digits, opening_parenthesis_token, operator_token, operator_token_only_concatenation, operator_token_without_concatenation, parentheses_token, template_literal_token, semicolon_token, string_token, valid_assignment, valid_conditional, valid_comment, valid_for, valid_function, valid_operator, valid_postfix, valid_symbol, variable_token
+from regex import chaining_token, closing_bracket_token, closing_parenthesis_token, comma_token, digits, opening_parenthesis_token, operator_token, operator_token_only_concatenation, operator_token_without_concatenation, parentheses_token, template_literal_token, semicolon_token, string_token, valid_assignment, valid_conditional, valid_comment, valid_for, valid_function, valid_operator, valid_postfix, valid_symbol, valid_while, variable_token
 from symbol import Symbol
 from variable_assignment_expression import VariableAssignmentExpression
 from variable_symbol import VariableSymbol
+from while_loop_expression import WhileLoopExpression
 
 class Tokenizer:
 	def __init__(self, file):
@@ -49,6 +50,17 @@ class Tokenizer:
 
 		self.tokenize(stop_ats=[closing_parenthesis_token], tree=expression)
 		expression.move_increment_expressions()
+
+		self.file.read_character() # absorb first "{"
+		self.tokenize(stop_ats=[closing_bracket_token], tree=expression)
+
+		return expression
+	
+	def read_while_loop(self):
+		expression = WhileLoopExpression()
+		
+		self.tokenize(stop_ats=[closing_parenthesis_token], tree=expression)
+		expression.convert_expressions_to_conditionals()
 
 		self.file.read_character() # absorb first "{"
 		self.tokenize(stop_ats=[closing_bracket_token], tree=expression)
@@ -248,6 +260,9 @@ class Tokenizer:
 				self.buffer = ""
 			elif valid_for.match(self.buffer): # handle for loops
 				self.add_expression(tree, self.read_for_loop())
+				self.buffer = ""
+			elif valid_while.match(self.buffer): # handle while loops
+				self.add_expression(tree, self.read_while_loop())
 				self.buffer = ""
 			elif valid_function.match(self.buffer): # handle functions
 				self.add_expression(tree, self.read_function())
