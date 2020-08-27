@@ -2,6 +2,7 @@ import sys
 sys.path.insert(0, "./expressions")
 sys.path.insert(0, "./misc")
 
+from array_access_expression import ArrayAccessExpression
 from break_expression import BreakExpression
 from case_expression import CaseExpression
 from chaining_expression import ChainingExpression
@@ -23,7 +24,7 @@ from parentheses_expression import ParenthesesExpression
 from postfix_expression import PostfixExpression
 from template_literal_expression import TemplateLiteralExpression
 from tokenizer_exception import TokenizerException
-from regex import chaining_token, closing_bracket_token, closing_parenthesis_token, colon_token, comma_token, digits, keywords, namespace_token, opening_bracket_token, opening_parenthesis_token, operator_token, operator_token_only_concatenation, operator_token_without_concatenation, parentheses_token, template_literal_token, semicolon_token, string_token, valid_assignment, valid_break, valid_case, valid_comment, valid_conditional, valid_continue, valid_default, valid_datablock, valid_for, valid_function, valid_operator, valid_package, valid_postfix, valid_return, valid_symbol, valid_switch, valid_switch_string, valid_while, variable_token
+from regex import chaining_token, closing_curly_bracket_token, closing_bracket_token, closing_parenthesis_token, colon_token, comma_token, digits, keywords, namespace_token, opening_curly_bracket_token, opening_bracket_token, opening_parenthesis_token, operator_token, operator_token_only_concatenation, operator_token_without_concatenation, parentheses_token, template_literal_token, semicolon_token, string_token, valid_assignment, valid_break, valid_case, valid_comment, valid_conditional, valid_continue, valid_default, valid_datablock, valid_for, valid_function, valid_operator, valid_package, valid_postfix, valid_return, valid_symbol, valid_switch, valid_switch_string, valid_while, variable_token
 from return_expression import ReturnExpression
 from string_literal import StringLiteral
 from symbol import Symbol
@@ -67,7 +68,7 @@ class Tokenizer:
 		expression.move_increment_expressions()
 
 		self.file.read_character() # absorb first "{"
-		self.tokenize(stop_ats=[closing_bracket_token], tree=expression)
+		self.tokenize(stop_ats=[closing_curly_bracket_token], tree=expression)
 
 		return expression
 	
@@ -78,14 +79,14 @@ class Tokenizer:
 		expression.convert_expressions_to_conditionals()
 
 		self.file.read_character() # absorb first "{"
-		self.tokenize(stop_ats=[closing_bracket_token], tree=expression)
+		self.tokenize(stop_ats=[closing_curly_bracket_token], tree=expression)
 
 		return expression
 	
 	def read_default(self):
 		expression = DefaultExpression()
 		# read up until next case, next default, or }
-		self.tokenize(give_back_stop_ats=[closing_bracket_token], buffer_give_back_stop_at=[valid_case, valid_default], tree=expression)
+		self.tokenize(give_back_stop_ats=[closing_curly_bracket_token], buffer_give_back_stop_at=[valid_case, valid_default], tree=expression)
 
 		return expression
 	
@@ -96,7 +97,7 @@ class Tokenizer:
 		expression.convert_expressions_to_conditionals()
 
 		# read up until next case, next default, or }
-		self.tokenize(give_back_stop_ats=[closing_bracket_token], buffer_give_back_stop_at=[valid_case, valid_default], tree=expression)
+		self.tokenize(give_back_stop_ats=[closing_curly_bracket_token], buffer_give_back_stop_at=[valid_case, valid_default], tree=expression)
 
 		return expression
 	
@@ -116,7 +117,7 @@ class Tokenizer:
 		expression.convert_expressions_to_conditionals()
 
 		self.file.read_character() # absorb first "{"
-		self.tokenize(stop_ats=[closing_bracket_token], tree=expression)
+		self.tokenize(stop_ats=[closing_curly_bracket_token], tree=expression)
 
 		return expression
 	
@@ -125,10 +126,10 @@ class Tokenizer:
 
 		self.file.give_character_back()
 
-		self.tokenize(stop_ats=[opening_bracket_token], tree=expression)
+		self.tokenize(stop_ats=[opening_curly_bracket_token], tree=expression)
 		expression.convert_expression_to_name()
 
-		self.tokenize(stop_ats=[closing_bracket_token], tree=expression)
+		self.tokenize(stop_ats=[closing_curly_bracket_token], tree=expression)
 
 		return expression
 	
@@ -153,7 +154,7 @@ class Tokenizer:
 			self.file.give_character_back()
 
 		self.file.read_character() # absorb first "{"
-		self.tokenize(stop_ats=[closing_bracket_token], tree=expression)
+		self.tokenize(stop_ats=[closing_curly_bracket_token], tree=expression)
 
 		return expression
 	
@@ -168,7 +169,7 @@ class Tokenizer:
 		expression.convert_expressions_to_arguments()
 
 		self.file.read_character() # absorb first "{"
-		self.tokenize(stop_ats=[closing_bracket_token], tree=expression)
+		self.tokenize(stop_ats=[closing_curly_bracket_token], tree=expression)
 
 		return expression
 	
@@ -190,7 +191,7 @@ class Tokenizer:
 			expression.move_expressions()
 
 		self.file.read_character() # absorb first "{"
-		self.tokenize(stop_ats=[closing_bracket_token], tree=expression)
+		self.tokenize(stop_ats=[closing_curly_bracket_token], tree=expression)
 
 		return expression
 
@@ -208,6 +209,13 @@ class Tokenizer:
 	def read_method_expression(self, method_name):
 		expression = MethodExpression(method_name)
 		self.tokenize(stop_ats=[closing_parenthesis_token], give_back_stop_ats=[semicolon_token], tree=expression)
+		expression.convert_expressions_to_arguments()
+		return expression
+	
+	def read_array_access_expression(self):
+		expression = ArrayAccessExpression(self.get_symbol(self.buffer))
+		self.buffer = ""
+		self.tokenize(stop_ats=[closing_bracket_token], give_back_stop_ats=[semicolon_token], tree=expression)
 		expression.convert_expressions_to_arguments()
 		return expression
 
@@ -407,10 +415,11 @@ class Tokenizer:
 				)
 			): # handle operators
 				if comma_token.match(char): # handle commas in special case
-					if type(tree) is MethodExpression:
-						self.absorb_buffer(tree)
-						tree.convert_expressions_to_arguments()
-					elif type(tree) is FunctionExpression:
+					if (
+						type(tree) is MethodExpression
+						or type(tree) is FunctionExpression
+						or type(tree) is ArrayAccessExpression
+					):
 						self.absorb_buffer(tree)
 						tree.convert_expressions_to_arguments()
 				else:
@@ -458,6 +467,9 @@ class Tokenizer:
 					self.add_expression(tree, self.read_parentheses_expression())
 				elif opening_parenthesis_token.match(char) and valid_symbol.match(self.buffer) != None: # handle method parentheses
 					self.add_expression(tree, self.read_method_expression(self.buffer))
+			elif opening_bracket_token.match(char): # handle array accessing
+				self.add_expression(tree, self.read_array_access_expression())
+				self.buffer = ""
 			else: # when in doubt, add to buffer
 				self.buffer = self.buffer + char
 		return tree

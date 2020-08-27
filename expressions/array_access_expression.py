@@ -3,9 +3,9 @@ from config import get_config
 from expression import Expression
 import re
 
-class MethodExpression(Expression):
-	def __init__(self, method_name):
-		self.method_name = method_name
+class ArrayAccessExpression(Expression):
+	def __init__(self, symbol):
+		self.symbol = symbol
 		self.expressions = []
 		self.argument_expressions = []
 		self.parent = None
@@ -16,7 +16,7 @@ class MethodExpression(Expression):
 			self.expressions = []
 	
 	def __str__(self):
-		return f"MethodExpression({self.method_name}, {self.argument_expressions})"
+		return f"ArrayAccessExpression({self.symbol}, {self.argument_expressions})"
 	
 	def __repr__(self):
 		return self.__str__()
@@ -30,4 +30,4 @@ class MethodExpression(Expression):
 		for argument in self.argument_expressions:
 			value = (value + argument.to_script() + "," + space)
 
-		return f"{self.method_name}({re.sub(r',$', '', value.strip())}){self.handle_semicolon()}"
+		return f"{self.symbol.to_script()}[{re.sub(r',$', '', value.strip())}]{self.handle_semicolon()}"
