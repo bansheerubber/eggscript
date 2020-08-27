@@ -1,7 +1,7 @@
 from config import get_config
 from regex import template_literal_token
 
-class TemplateLiteral:
+class TemplateLiteralExpression:
 	def __init__(self):
 		self.strings = []
 		self.expressions = []
@@ -9,7 +9,7 @@ class TemplateLiteral:
 		self.parent = None
 	
 	def __str__(self):
-		return f"TemplateLiteral({self.strings}, {self.templates})"
+		return f"TemplateLiteralExpression({self.strings}, {self.templates})"
 	
 	def __repr__(self):
 		return self.__str__()

@@ -1,3 +1,7 @@
+import sys
+sys.path.insert(0, "./expressions")
+sys.path.insert(0, "./misc")
+
 from break_expression import BreakExpression
 from case_expression import CaseExpression
 from chaining_expression import ChainingExpression
@@ -17,7 +21,7 @@ from operator_expression import OperatorExpression
 from package_expression import PackageExpression
 from parentheses_expression import ParenthesesExpression
 from postfix_expression import PostfixExpression
-from template_literal import TemplateLiteral
+from template_literal_expression import TemplateLiteralExpression
 from tokenizer_exception import TokenizerException
 from regex import chaining_token, closing_bracket_token, closing_parenthesis_token, colon_token, comma_token, digits, keywords, namespace_token, opening_bracket_token, opening_parenthesis_token, operator_token, operator_token_only_concatenation, operator_token_without_concatenation, parentheses_token, template_literal_token, semicolon_token, string_token, valid_assignment, valid_break, valid_case, valid_comment, valid_conditional, valid_continue, valid_default, valid_datablock, valid_for, valid_function, valid_operator, valid_package, valid_postfix, valid_return, valid_symbol, valid_switch, valid_switch_string, valid_while, variable_token
 from return_expression import ReturnExpression
@@ -222,7 +226,7 @@ class Tokenizer:
 				continue
 			elif template_literal_token.match(char):
 				if template_literal == None:
-					template_literal = TemplateLiteral() # create template literal if we don't have one
+					template_literal = TemplateLiteralExpression() # create template literal if we don't have one
 				# tokenize b/c we're parsing runnable code
 				self.tokenize(stop_ats=[template_literal_token], tree=template_literal)
 				# move the templates over to a new list
