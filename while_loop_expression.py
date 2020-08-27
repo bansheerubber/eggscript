@@ -4,6 +4,7 @@ class WhileLoopExpression(Expression):
 	def __init__(self):
 		self.expressions = []
 		self.conditional_expressions = []
+		self.code_block = True
 	
 	def convert_expressions_to_conditionals(self):
 		self.conditional_expressions = self.expressions

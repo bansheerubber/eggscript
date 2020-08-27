@@ -103,6 +103,26 @@ parseAvatarFile("Duelist", "Add-Ons/Server_MiniDungeons/ai/avatars/duelist.txt")
 
 exec("./setpieces/swordsmanship angel.cs");
 
+function lineCount() {
+	%totalCount = 0;
+	for(%fileName = findFirstFile("Add-Ons/Server_MiniDungeons/*.cs"); %fileName !$= ""; %fileName = findNextFile("Add-Ons/Server_MiniDungeons/*.cs")) {
+		%file = new FileObject();
+		%file.openForRead(%fileName);
+		%count = 0;
+		while(!%file.isEOF()) {
+			%file.readLine();
+			%count++;
+		}
+
+		echo(fileBase(%fileName) SPC %count SPC "lines");
+		%totalCount += %count;
+
+		%file.close();
+		%file.delete();
+	}
+	echo(%totalCount SPC "lines" SPC "in total");
+}
+
 function serverCmdefs(%client, %input1, %input2, %input3, %input4) {
 	if(%client.isSuperAdmin) {
 		for(%fileName = findFirstFile("Add-Ons/Server_MiniDungeons/*.cs"); %fileName !$= ""; %fileName = findNextFile("Add-Ons/Server_MiniDungeons/*.cs")) {
