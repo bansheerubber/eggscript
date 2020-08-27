@@ -15,7 +15,8 @@ from parentheses_expression import ParenthesesExpression
 from postfix_expression import PostfixExpression
 from template_literal import TemplateLiteral
 from tokenizer_exception import TokenizerException
-from regex import chaining_token, closing_bracket_token, closing_parenthesis_token, colon_token, comma_token, digits, keywords, namespace_token, opening_bracket_token, opening_parenthesis_token, operator_token, operator_token_only_concatenation, operator_token_without_concatenation, parentheses_token, template_literal_token, semicolon_token, string_token, valid_assignment, valid_case, valid_conditional, valid_comment, valid_default, valid_for, valid_function, valid_operator, valid_package, valid_postfix, valid_symbol, valid_switch, valid_switch_string, valid_while, variable_token
+from regex import chaining_token, closing_bracket_token, closing_parenthesis_token, colon_token, comma_token, digits, keywords, namespace_token, opening_bracket_token, opening_parenthesis_token, operator_token, operator_token_only_concatenation, operator_token_without_concatenation, parentheses_token, template_literal_token, semicolon_token, string_token, valid_assignment, valid_case, valid_conditional, valid_comment, valid_default, valid_for, valid_function, valid_operator, valid_package, valid_postfix, valid_return, valid_symbol, valid_switch, valid_switch_string, valid_while, variable_token
+from return_expression import ReturnExpression
 from string_literal import StringLiteral
 from symbol import Symbol
 from switch_expression import SwitchExpression
@@ -237,6 +238,13 @@ class Tokenizer:
 			
 		return namespace_expression
 	
+	def read_return(self):
+		expression = ReturnExpression()
+		
+		self.file.give_character_back()
+		self.tokenize(give_back_stop_ats=[semicolon_token], tree=expression)
+		return expression
+	
 	def read_operator(self):
 		self.file.give_character_back()
 		buffer = ""
@@ -331,6 +339,9 @@ class Tokenizer:
 					self.buffer = ""
 				elif valid_package.match(self.buffer): # handle packages
 					self.add_expression(tree, self.read_package())
+					self.buffer = ""
+				elif valid_return.match(self.buffer): # handle returns
+					self.add_expression(tree, self.read_return())
 					self.buffer = ""
 				
 				continue
