@@ -1,3 +1,4 @@
+from container_expression import ContainerExpression
 from expression import Expression
 
 class MethodExpression(Expression):
@@ -9,8 +10,7 @@ class MethodExpression(Expression):
 		self.parent = None
 	
 	def convert_expressions_to_arguments(self):
-		for expression in self.expressions:
-			self.arguments.append(expression)
+		self.arguments.append(ContainerExpression(self.expressions))
 		self.expressions = []
 	
 	def __str__(self):
