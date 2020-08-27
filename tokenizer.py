@@ -10,11 +10,12 @@ from literal import Literal
 from method_expression import MethodExpression
 from namespace_expression import NamespaceExpression
 from operator_expression import OperatorExpression
+from package_expression import PackageExpression
 from parentheses_expression import ParenthesesExpression
 from postfix_expression import PostfixExpression
 from template_literal import TemplateLiteral
 from tokenizer_exception import TokenizerException
-from regex import chaining_token, closing_bracket_token, closing_parenthesis_token, colon_token, comma_token, digits, keywords, namespace_token, opening_parenthesis_token, operator_token, operator_token_only_concatenation, operator_token_without_concatenation, parentheses_token, template_literal_token, semicolon_token, string_token, valid_assignment, valid_case, valid_conditional, valid_comment, valid_default, valid_for, valid_function, valid_operator, valid_postfix, valid_symbol, valid_switch, valid_switch_string, valid_while, variable_token
+from regex import chaining_token, closing_bracket_token, closing_parenthesis_token, colon_token, comma_token, digits, keywords, namespace_token, opening_bracket_token, opening_parenthesis_token, operator_token, operator_token_only_concatenation, operator_token_without_concatenation, parentheses_token, template_literal_token, semicolon_token, string_token, valid_assignment, valid_case, valid_conditional, valid_comment, valid_default, valid_for, valid_function, valid_operator, valid_package, valid_postfix, valid_symbol, valid_switch, valid_switch_string, valid_while, variable_token
 from string_literal import StringLiteral
 from symbol import Symbol
 from switch_expression import SwitchExpression
@@ -107,6 +108,18 @@ class Tokenizer:
 		expression.convert_expressions_to_conditionals()
 
 		self.file.read_character() # absorb first "{"
+		self.tokenize(stop_ats=[closing_bracket_token], tree=expression)
+
+		return expression
+	
+	def read_package(self):
+		expression = PackageExpression()
+
+		self.file.give_character_back()
+
+		self.tokenize(stop_ats=[opening_bracket_token], tree=expression)
+		expression.convert_expression_to_name()
+
 		self.tokenize(stop_ats=[closing_bracket_token], tree=expression)
 
 		return expression
@@ -316,6 +329,9 @@ class Tokenizer:
 					self.buffer = ""
 				elif valid_default.match(self.buffer): # handle default statement
 					self.add_expression(tree, self.read_default())
+					self.buffer = ""
+				elif valid_package.match(self.buffer): # handle packages
+					self.add_expression(tree, self.read_package())
 					self.buffer = ""
 				
 				continue
