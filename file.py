@@ -12,7 +12,7 @@ class File:
 		line = self.file.readline()
 		self.line_count = self.line_count + 1
 		if not line:
-			raise Exception("EOF")
+			return None
 		else:
 			return line
 	
@@ -29,6 +29,9 @@ class File:
 			self.current_line = self.read_line()
 			self.current_line_index = self.current_line_index + 1
 			self.current_index = 0
+		
+		if self.current_line == None:
+			raise Exception("EOF")
 		
 		self.skipped_space = False
 		char = self.current_line[self.current_index]
