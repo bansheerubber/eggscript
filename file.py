@@ -30,11 +30,13 @@ class File:
 			self.current_line_index = self.current_line_index + 1
 			self.current_index = 0
 		
+		self.skipped_space = False
 		char = self.current_line[self.current_index]
 		self.current_index = self.current_index + 1
 		while whitespace.match(char) != None and ignore_whitespace and len(self.current_line) > self.current_index:
 			char = self.current_line[self.current_index]
 			self.current_index = self.current_index + 1
+			self.skipped_space = True
 
 		if len(self.current_line) == self.current_index and whitespace.match(char) != None:
 			return ''

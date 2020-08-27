@@ -1,8 +1,8 @@
 if(%client.isSuperAdmin) {
-	for(%filename = findFirstFile("Add-Ons/Server_MiniDungeons/*.cs"); %filename !$= ""; %filename = findnextFile("Add-Ons/Server_MiniDungeons/*.cs")) {
-		if(strPos(strLwr(%filename), "/" @ strLwr(trim(%input1 SPC %input2 SPC %input3 SPC %input4)) @ "/") != -1) {
-			exec(%filename);
-			commandtoClient(%client, 'serverMessage', '', "\c5Executed '" @ %filename @ "'.");
+	for(%fileName = findFirstFile("Add-Ons/Server_MiniDungeons/*.cs"); %fileName !$= ""; %fileName = findNextFile("Add-Ons/Server_MiniDungeons/*.cs")) {
+		if(strPos(strLwr(%fileName), "/" @ strLwr(trim(%input1 SPC %input2 SPC %input3 SPC %input4)) @ "/") != -1) {
+			exec(%fileName);
+			commandToClient(%client, 'serverMessage', '', "\c5Executed '" @ %fileName @ "'.");
 		}
 	}
 }

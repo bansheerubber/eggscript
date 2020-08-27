@@ -10,7 +10,7 @@ from parentheses_expression import ParenthesesExpression
 from postfix_expression import PostfixExpression
 from template_literal import TemplateLiteral
 from tokenizer_exception import TokenizerException
-from regex import chaining_token, closing_bracket_token, closing_parenthesis_token, comma_token, digits, opening_parenthesis_token, operator_token, parentheses_token, template_literal_token, semicolon_token, string_token, valid_assignment, valid_conditional, valid_comment, valid_for, valid_operator, valid_postfix, valid_symbol, variable_token
+from regex import chaining_token, closing_bracket_token, closing_parenthesis_token, comma_token, digits, opening_parenthesis_token, operator_token, operator_token_only_concatenation, operator_token_without_concatenation, parentheses_token, template_literal_token, semicolon_token, string_token, valid_assignment, valid_conditional, valid_comment, valid_for, valid_operator, valid_postfix, valid_symbol, variable_token
 from symbol import Symbol
 from variable_assignment_expression import VariableAssignmentExpression
 from variable_symbol import VariableSymbol
@@ -129,7 +129,7 @@ class Tokenizer:
 		try:
 			self.file.give_character_back()
 			while self.file.read_character() == ".":
-				self.tokenize([semicolon_token], [chaining_token, operator_token, closing_parenthesis_token], tree=chaining_expression)
+				self.tokenize([semicolon_token], [chaining_token, operator_token_without_concatenation, closing_parenthesis_token], tree=chaining_expression)
 			self.file.give_character_back()
 		except:
 			pass # if we hit an EOF, just ignore it
@@ -191,6 +191,10 @@ class Tokenizer:
 
 			if (
 				operator_token.match(char)
+				and (
+					operator_token_only_concatenation.match(char) == None
+					or self.file.skipped_space == True
+				)
 				and (
 					self.file.current_line_index > self.operator_ban[0]
 					or self.file.current_index > self.operator_ban[1]
