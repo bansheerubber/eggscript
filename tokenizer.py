@@ -11,7 +11,7 @@ from parentheses_expression import ParenthesesExpression
 from postfix_expression import PostfixExpression
 from template_literal import TemplateLiteral
 from tokenizer_exception import TokenizerException
-from regex import chaining_token, closing_bracket_token, closing_parenthesis_token, comma_token, digits, opening_parenthesis_token, operator_token, operator_token_only_concatenation, operator_token_without_concatenation, parentheses_token, template_literal_token, semicolon_token, string_token, valid_assignment, valid_conditional, valid_comment, valid_for, valid_function, valid_operator, valid_postfix, valid_symbol, valid_while, variable_token
+from regex import chaining_token, closing_bracket_token, closing_parenthesis_token, comma_token, digits, keywords, opening_parenthesis_token, operator_token, operator_token_only_concatenation, operator_token_without_concatenation, parentheses_token, template_literal_token, semicolon_token, string_token, valid_assignment, valid_conditional, valid_comment, valid_for, valid_function, valid_operator, valid_postfix, valid_symbol, valid_while, variable_token
 from symbol import Symbol
 from variable_assignment_expression import VariableAssignmentExpression
 from variable_symbol import VariableSymbol
@@ -216,6 +216,30 @@ class Tokenizer:
 				if stop_at.match(char):
 					self.absorb_buffer(tree)
 					return tree
+			
+			# handle keyword matching (function, for, if, etc)
+			if(
+				keywords.match(self.buffer)
+				and keywords.match(self.buffer + char) == None
+				and (
+					valid_symbol.match(self.buffer + char) == None
+					or self.file.skipped_space
+				)
+			):
+				if valid_conditional.match(self.buffer): # handle conditionals
+					self.add_expression(tree, self.read_conditional(self.buffer))
+					self.buffer = ""
+				elif valid_for.match(self.buffer): # handle for loops
+					self.add_expression(tree, self.read_for_loop())
+					self.buffer = ""
+				elif valid_while.match(self.buffer): # handle while loops
+					self.add_expression(tree, self.read_while_loop())
+					self.buffer = ""
+				elif valid_function.match(self.buffer): # handle functions
+					self.add_expression(tree, self.read_function())
+					self.buffer = ""
+				
+				continue
 
 			if (
 				operator_token.match(char)
@@ -255,18 +279,6 @@ class Tokenizer:
 							self.add_expression(tree, new_expression)
 						else:
 							self.add_expression(tree, operator)
-			elif valid_conditional.match(self.buffer): # handle conditionals
-				self.add_expression(tree, self.read_conditional(self.buffer))
-				self.buffer = ""
-			elif valid_for.match(self.buffer): # handle for loops
-				self.add_expression(tree, self.read_for_loop())
-				self.buffer = ""
-			elif valid_while.match(self.buffer): # handle while loops
-				self.add_expression(tree, self.read_while_loop())
-				self.buffer = ""
-			elif valid_function.match(self.buffer): # handle functions
-				self.add_expression(tree, self.read_function())
-				self.buffer = ""
 			elif chaining_token.match(char): # handle chaining (%test.test.test.test...)
 				if valid_symbol.match(self.buffer):
 					# if we have a valid symbol, then build chaining expression from remaining valid symbols
