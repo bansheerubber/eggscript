@@ -16,6 +16,15 @@ class File:
 		else:
 			return line
 	
+	# absorbs the rest of the line
+	def absorb_line(self):
+		rest = self.current_line[self.current_index:-1]
+		self.current_line = self.read_line()
+		self.current_line_index = self.current_line_index + 1
+		self.current_index = 0
+		print(self.current_line)
+		return rest
+	
 	def read_character(self, ignore_whitespace=True):
 		if self.current_line == None or len(self.current_line) <= self.current_index:
 			self.current_line = self.read_line()
