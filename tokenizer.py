@@ -161,7 +161,7 @@ class Tokenizer:
 		try:
 			self.file.give_character_back()
 			while self.file.read_character() == ".":
-				self.tokenize([semicolon_token], [chaining_token, operator_token_without_concatenation, closing_parenthesis_token], tree=chaining_expression)
+				self.tokenize(stop_ats=[], give_back_stop_ats=[semicolon_token, chaining_token, operator_token_without_concatenation, closing_parenthesis_token], tree=chaining_expression)
 			self.file.give_character_back()
 		except:
 			pass # if we hit an EOF, just ignore it
