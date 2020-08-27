@@ -138,7 +138,6 @@ class Tokenizer:
 		self.tokenize(stop_ats=[closing_parenthesis_token], give_back_stop_ats=[colon_token], tree=expression)
 
 		if self.file.read_character() == ":":
-
 			inheritance_expression = InheritanceExpression()
 			inheritance_expression.child_class = expression.expressions[0]
 			self.tokenize(stop_ats=[closing_parenthesis_token], tree=inheritance_expression)
@@ -431,7 +430,7 @@ class Tokenizer:
 							self.add_expression(tree, new_expression)
 						else:
 							self.add_expression(tree, operator)
-			elif chaining_token.match(char): # handle chaining (%test.test.test.test...)
+			elif chaining_token.match(char) and valid_symbol.match(self.buffer): # handle chaining (%test.test.test.test...)
 				if valid_symbol.match(self.buffer):
 					# if we have a valid symbol, then build chaining expression from remaining valid symbols
 					self.add_expression(tree, self.read_chaining_expression(self.buffer, inheritable_give_back_stop_at))
