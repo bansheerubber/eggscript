@@ -1,6 +1,8 @@
+from case_expression import CaseExpression
 from chaining_expression import ChainingExpression
 from comment import Comment
 from conditional_expression import ConditionalExpression
+from default_expression import DefaultExpression
 from file import File
 from for_loop_expression import ForLoopExpression
 from function_expression import FunctionExpression
@@ -12,9 +14,10 @@ from parentheses_expression import ParenthesesExpression
 from postfix_expression import PostfixExpression
 from template_literal import TemplateLiteral
 from tokenizer_exception import TokenizerException
-from regex import chaining_token, closing_bracket_token, closing_parenthesis_token, comma_token, digits, keywords, namespace_token, opening_parenthesis_token, operator_token, operator_token_only_concatenation, operator_token_without_concatenation, parentheses_token, template_literal_token, semicolon_token, string_token, valid_assignment, valid_conditional, valid_comment, valid_for, valid_function, valid_operator, valid_postfix, valid_symbol, valid_while, variable_token
+from regex import chaining_token, closing_bracket_token, closing_parenthesis_token, colon_token, comma_token, digits, keywords, namespace_token, opening_parenthesis_token, operator_token, operator_token_only_concatenation, operator_token_without_concatenation, parentheses_token, template_literal_token, semicolon_token, string_token, valid_assignment, valid_case, valid_conditional, valid_comment, valid_default, valid_for, valid_function, valid_operator, valid_postfix, valid_symbol, valid_switch, valid_switch_string, valid_while, variable_token
 from string_literal import StringLiteral
 from symbol import Symbol
+from switch_expression import SwitchExpression
 from variable_assignment_expression import VariableAssignmentExpression
 from variable_symbol import VariableSymbol
 from while_loop_expression import WhileLoopExpression
@@ -61,6 +64,45 @@ class Tokenizer:
 	def read_while_loop(self):
 		expression = WhileLoopExpression()
 		
+		self.tokenize(stop_ats=[closing_parenthesis_token], tree=expression)
+		expression.convert_expressions_to_conditionals()
+
+		self.file.read_character() # absorb first "{"
+		self.tokenize(stop_ats=[closing_bracket_token], tree=expression)
+
+		return expression
+	
+	def read_default(self):
+		expression = DefaultExpression()
+		# read up until next case, next default, or }
+		self.tokenize(give_back_stop_ats=[closing_bracket_token], buffer_give_back_stop_at=[valid_case, valid_default], tree=expression)
+
+		return expression
+	
+	def read_case(self):
+		expression = CaseExpression()
+		self.file.give_character_back()
+		self.tokenize(stop_ats=[colon_token], tree=expression)
+		expression.convert_expressions_to_conditionals()
+
+		# read up until next case, next default, or }
+		self.tokenize(give_back_stop_ats=[closing_bracket_token], buffer_give_back_stop_at=[valid_case, valid_default], tree=expression)
+
+		return expression
+	
+	def read_switch(self):
+		self.file.give_character_back()
+		self.file.give_character_back()
+		char = self.file.read_character()
+		switch_type = "switch"
+		if char == "$":
+			switch_type = "switch$"
+		else:
+			self.file.read_character()
+		
+		expression = SwitchExpression(switch_type)
+		
+		self.file.read_character() # absorb first (
 		self.tokenize(stop_ats=[closing_parenthesis_token], tree=expression)
 		expression.convert_expressions_to_conditionals()
 
@@ -215,7 +257,7 @@ class Tokenizer:
 	def update_last_expression(self, tree, new_expression):
 		self.add_expression(new_expression, tree.expressions.pop())
 
-	def tokenize(self, stop_ats=[], give_back_stop_ats=[], tree=None):
+	def tokenize(self, stop_ats=[], give_back_stop_ats=[], buffer_give_back_stop_at=[], tree=None):
 		self.buffer = ""
 		while True:
 			char = ''
@@ -224,6 +266,12 @@ class Tokenizer:
 			except:
 				print("Finished file")
 				break
+			
+			for stop_at in buffer_give_back_stop_at:
+				if stop_at.match(self.buffer):
+					self.file.current_index = self.file.current_index - len(self.buffer) - 2
+					self.buffer = ""
+					return tree
 		
 			for stop_at in give_back_stop_ats:
 				if stop_at.match(char):
@@ -257,6 +305,18 @@ class Tokenizer:
 				elif valid_function.match(self.buffer): # handle functions
 					self.add_expression(tree, self.read_function())
 					self.buffer = ""
+				elif valid_switch.match(self.buffer): # handle switch statements
+					self.add_expression(tree, self.read_switch())
+					self.buffer = ""
+				elif valid_switch_string.match(self.buffer): # handle switch string statements
+					self.add_expression(tree, self.read_switch())
+					self.buffer = ""
+				elif valid_case.match(self.buffer): # handle case statements
+					self.add_expression(tree, self.read_case())
+					self.buffer = ""
+				elif valid_default.match(self.buffer): # handle default statement
+					self.add_expression(tree, self.read_default())
+					self.buffer = ""
 				
 				continue
 
@@ -279,9 +339,9 @@ class Tokenizer:
 						self.absorb_buffer(tree)
 						tree.convert_expressions_to_arguments()
 				else:
-					self.absorb_buffer(tree)
 					operator = self.read_operator()
 					if operator != None:
+						self.absorb_buffer(tree)
 						if valid_comment.match(operator.operator):
 							self.add_expression(tree, self.read_comment())
 						elif valid_assignment.match(operator.operator):
