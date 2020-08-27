@@ -103,7 +103,6 @@ class Tokenizer:
 		
 		expression = SwitchExpression(switch_type)
 		
-		self.file.read_character() # absorb first (
 		self.tokenize(stop_ats=[closing_parenthesis_token], tree=expression)
 		expression.convert_expressions_to_conditionals()
 
