@@ -7,3 +7,11 @@ class Expression:
 			return ";"
 		else:
 			return ""
+	
+	def get_indent_level(self):
+		level = 0
+		parent = self.parent
+		while parent:
+			level = level + 1
+			parent = parent.parent
+		return level

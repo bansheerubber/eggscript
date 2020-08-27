@@ -1,4 +1,6 @@
-class ConditionalExpression:
+from expression import Expression
+
+class ConditionalExpression(Expression):
 	def __init__(self):
 		self.conditional_expressions = []
 		self.expressions = []
@@ -25,12 +27,12 @@ class ConditionalExpression:
 			
 			full_output = self.type + "(" + output + ") {\n"
 		else:
-			full_output = self.type + "{\n"
+			full_output = self.type + " {\n"
 		
 		output = ""
 		for expression in self.expressions:
-			output = "\t" + output + expression.to_script() + "\n"
+			output = output + ("\t" * self.get_indent_level()) + expression.to_script() + "\n"
 		
-		full_output = full_output + output[0:-1] + "\n}"
+		full_output = full_output + output[0:-1] + "\n" + ("\t" * (self.get_indent_level() - 1)) + "}"
 
 		return full_output

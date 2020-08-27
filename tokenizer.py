@@ -30,8 +30,8 @@ class Tokenizer:
 	
 	def read_conditional(self, buffer):
 		expression = ConditionalExpression()
+		self.file.give_character_back()
 		if buffer == "else":
-			self.file.give_character_back()
 			buffer = buffer + " " + self.file.read_character() + self.file.read_character()
 			if buffer != "else if":
 				self.file.give_character_back()
@@ -41,7 +41,7 @@ class Tokenizer:
 		expression.type = buffer
 
 		if buffer != "else":
-			self.file.read_character()
+			self.file.read_character() # absorb first "("
 			self.tokenize(stop_ats=[closing_parenthesis_token], tree=expression)
 			expression.move_expressions()
 
@@ -103,7 +103,7 @@ class Tokenizer:
 		try:
 			self.file.give_character_back()
 			while self.file.read_character() == ".":
-				self.tokenize([semicolon_token], [chaining_token, operator_token], tree=chaining_expression)
+				self.tokenize([semicolon_token], [chaining_token, operator_token, closing_parenthesis_token], tree=chaining_expression)
 			self.file.give_character_back()
 		except:
 			pass # if we hit an EOF, just ignore it

@@ -1,4 +1,4 @@
-if(%egg && %egg2) {
+if(%egg && %egg2 && %frog.egg) {
 	%hello = 50013290;
 } else if(true) {
 	echo("how are you");

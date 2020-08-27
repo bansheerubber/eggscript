@@ -15,6 +15,6 @@ class ParenthesesExpression:
 			value = value + expression.to_script()
 
 		if value == "":
-			raise Exception(f"Could not find value for variable assignment '{self.left_hand_expression}'")
+			raise Exception(f"Could not find value for variable assignment '{self.expressions}'")
 
 		return f"({value})"
