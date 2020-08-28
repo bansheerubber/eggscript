@@ -379,7 +379,6 @@ class Tokenizer:
 			try:
 				char = self.file.read_character(ignore_whitespace=not read_spaces)
 			except:
-				print("Finished file")
 				break
 			
 			for stop_at in buffer_give_back_stop_at:
