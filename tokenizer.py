@@ -18,13 +18,14 @@ from inheritance_expression import InheritanceExpression
 from literal import Literal
 from method_expression import MethodExpression
 from namespace_expression import NamespaceExpression
+from new_object_expression import NewObjectExpression
 from operator_expression import OperatorExpression
 from package_expression import PackageExpression
 from parentheses_expression import ParenthesesExpression
 from postfix_expression import PostfixExpression
 from template_literal_expression import TemplateLiteralExpression
 from tokenizer_exception import TokenizerException
-from regex import chaining_token, closing_curly_bracket_token, closing_bracket_token, closing_parenthesis_token, colon_token, comma_token, digits, keywords, namespace_token, opening_curly_bracket_token, opening_bracket_token, opening_parenthesis_token, operator_token, operator_token_only_concatenation, operator_token_without_concatenation, parentheses_token, template_literal_token, semicolon_token, space_token, string_token, valid_assignment, valid_break, valid_case, valid_comment, valid_conditional, valid_continue, valid_default, valid_datablock, valid_for, valid_function, valid_operator, valid_package, valid_postfix, valid_return, valid_symbol, valid_switch, valid_switch_string, valid_while, variable_token
+from regex import chaining_token, closing_curly_bracket_token, closing_bracket_token, closing_parenthesis_token, colon_token, comma_token, digits, keywords, namespace_token, opening_curly_bracket_token, opening_bracket_token, opening_parenthesis_token, operator_token, operator_token_only_concatenation, operator_token_without_concatenation, parentheses_token, template_literal_token, semicolon_token, space_token, string_token, valid_assignment, valid_break, valid_case, valid_comment, valid_conditional, valid_continue, valid_default, valid_datablock, valid_for, valid_function, valid_new, valid_operator, valid_package, valid_postfix, valid_return, valid_symbol, valid_switch, valid_switch_string, valid_while, variable_token
 from return_expression import ReturnExpression
 from string_literal import StringLiteral
 from symbol import Symbol
@@ -131,6 +132,21 @@ class Tokenizer:
 		self.tokenize(stop_ats=[opening_curly_bracket_token], tree=expression)
 		expression.convert_expression_to_name()
 
+		self.tokenize(stop_ats=[closing_curly_bracket_token], tree=expression)
+
+		return expression
+	
+	def read_new(self):
+		expression = NewObjectExpression()
+		self.file.give_character_back()
+
+		self.tokenize(stop_ats=[opening_parenthesis_token], tree=expression)
+		expression.convert_expressions_to_class()
+
+		self.tokenize(stop_ats=[closing_parenthesis_token], tree=expression)
+		expression.convert_expressions_to_arguments()
+
+		self.file.read_character() # absorb first "{"
 		self.tokenize(stop_ats=[closing_curly_bracket_token], tree=expression)
 
 		return expression
@@ -373,6 +389,7 @@ class Tokenizer:
 					valid_symbol.match(self.buffer + char) == None
 					or self.file.skipped_space
 				)
+				and type(tree) is not NewObjectExpression
 			):
 				if valid_conditional.match(self.buffer): # handle conditionals
 					self.add_expression(tree, self.read_conditional(self.buffer))
@@ -413,6 +430,9 @@ class Tokenizer:
 				elif valid_datablock.match(self.buffer): # handle datablocks
 					self.add_expression(tree, self.read_datablock())
 					self.buffer = ""
+				elif valid_new.match(self.buffer): # handle object creation
+					self.add_expression(tree, self.read_new())
+					self.buffer = ""
 				
 				continue
 
@@ -432,6 +452,7 @@ class Tokenizer:
 						type(tree) is MethodExpression
 						or type(tree) is FunctionExpression
 						or type(tree) is ArrayAccessExpression
+						or type(tree) is NewObjectExpression
 					):
 						self.absorb_buffer(tree)
 						tree.convert_expressions_to_arguments()

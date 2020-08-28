@@ -1,121 +1,148 @@
-// all enemies have basic states: idle, seek, and attack. the states are defined using tagged fields
+datablock AudioProfile(GladiusDeath1Sound) {
+	filename    = "./sounds/gladius death1.wav";
+	description = AudioDefault3d;
+	preload = true;
+};
 
-// %player.idleFOV						bot's fov
-// %player.idleDrawDistance 			how far a bot can see
-// %player.seekTimeout					how long a bot seeks until giving up if it hasn't seen the player
-// %player.attackRange					determines how far away target has to be to trigger attack state
+datablock AudioProfile(GladiusDeath2Sound) {
+	filename    = "./sounds/gladius death2.wav";
+	description = AudioDefault3d;
+	preload = true;
+};
 
-// %player.idleCleanup 					method that is called when we have to cleanup an idle transition
-// %player.seekCleanup 					method that is called when we have to cleanup a seek transition
-// %player.attackCleanup 				method that is called when we have to cleanup an attack transition
-// %player.idle 						method that is called when we idle
-// %player.seek 						method that is called when we seek
-// %player.canFlank						method that determines if the bot can flank
-// %player.onFlank						method that is called when a bot flanks
-// %player.flankStopDistance			distance at which we stop flanking
-// %player.attackRange					distance at which we switch to attack state
-// %player.attack 						method that is called when we attack
+datablock AudioProfile(GladiusDeath3Sound) {
+	filename    = "./sounds/gladius death3.wav";
+	description = AudioDefault3d;
+	preload = true;
+};
 
-$MD::AiIdle = 0;
-$MD::AiSeek = 1;
-$MD::AiAttack = 2;
+function createGladiusAi(%transform, %roomIndex) {
+	%ai = new AiPlayer() {
+		datablock = MiniDungeonsArmor;
+		position = getWords(%transform, 0, 2);
+		rotation = "0 0 0 1";
 
-function AiPlayer::onSpawn(%this, %roomIndex) {
-	%this.spawnTime = getSimTime();
+		idleDrawDistance = 200;
+		idleThirdSenseDistance = 5;
+		idleFOV = 360;
+		attackRange = 7;
+		idle = "idle";
+		seek = "seek";
+		canFlank = "gladiusCanFlank";
+		onFlank = "gladiusOnFlank";
+		flankStopDistance = 5; // distance at which we stop flanking
+		attack = "gladiusAttack";
+
+		idleCleanup = "idleCleanup";
+		seekCleanup = "gladiusSeekCleanup";
+		attackCleanup = "gladiusAttackCleanup";
+
+		reward = 1;
+
+		seekHeightCheck = true;
+
+		customDeathCry = "GladiusDeath" @ getRandom(1, 3) @ "Sound";
+
+		isEnemyAi = true;
+		isBot = true;
+
+		name = generateRandomName();
+	};
+	%ai.setTransform(%transform);
+	%ai.setAIState($MD::AiIdle);
+	%ai.setMaxSideSpeed(MiniDungeonsArmor.maxForwardSpeed);
+
+	%ai.setShapeName(%ai.name, 8564862);
+	%ai.setShapeNameDistance(50);
+
+	GladiusSwordArmor.mount(%ai, 0);
+
+	%ai.setAvatar("gladius");
+
+	%ai.onSpawn(%roomIndex);
+
+	return %ai;
 }
 
-function AiPlayer::setAiState(%this, %state) {
-	%this.ai = %this.schedule(33, _setAIState, %state);
-}
+function AiPlayer::gladiusAttack(%this) {
+	if(!%this.hasValidTarget()) {
+		%this.loseTarget();
+		%this.setAiState($MD::AiIdle);
+		return;
+	}
 
-function AiPlayer::_setAiState(%this, %state) {
-	if(isObject(%this.ai)) {
-		%this.ai.delete(); // handling wait schedule
-	}
-	else {
-		cancel(%this.ai);
-	}
-	
-	// cleanup
-	if(%this.state != %state) {
-		switch(%this.state) {
-			case 0:
-				%this.call(%this.idleCleanup, %state);
-			
-			case 1:
-				%this.call(%this.seekCleanup, %state);
-			
-			case 2:
-				%this.call(%this.attackCleanup, %state);
-		}
-	}
-	
-	switch(%state) {
-		case 0:
-			%this.call(%this.idle);
+	%targetPosition = %this.target.getPosition();
+	%position = %this.getPosition();
 
-		case 1:
-			%this.call(%this.seek);
+	if(
+		getSimTime() > %this.nextGladiusAttack
+		&& mAbs(getWord(%targetPosition, 2) - getWord(%position, 2)) < 2
+	) {
+		%this.setSwordTrigger(0, true);
+		%this.schedule(1400, setSwordTrigger, 0, false);
+
+		%this.setAimObject(%this.target);
+		%this.setMoveX(getRandom(0, 1) ? -0.3 : 0.3);
+		%this.setMoveY(0.4);
+
+		%this.playThread(0, "plant");
 		
-		case 2:
-			%this.call(%this.attack);
+		%this.nextGladiusAttack = getSimTime() + 2000;
+		%this.nextGladiusMove = getSimTime() + 1000;
+		%this.gladiusMoveX = getRandom(0, 1) ? -1 : 1;
 	}
-	%this.state = %state;
-}
 
-function AiPlayer::talkForTime(%this, %time) {
-	%this.playThread(3, "talk");
-	%this.talkSchedule = %this.schedule(%time * 1000, playThread, 3, "root");
-}
-
-deActivatePackage(MiniDungeonsAI);
-package MiniDungeonsAI {
-	function AiPlayer::playDeathCry(%this) {
-		if(%this.customDeathCry !$= "") {
-			%this.playAudio(3, %this.customDeathCry);
+	if(getSimTime() > %this.nextGladiusMove) {
+		%raycast = containerRaycast(%this.getEyePoint(), %this.target.getHackPosition(), $TypeMasks::fxBrickObjectType | $TypeMasks::PlayerObjectType, %this);
+		if(vectorDist(%targetPosition, %position) > %this.attackRange || getWord(%raycast, 0) != %this.target) {
+			%this.setAiState($MD::AiSeek);
 			return;
 		}
-
-		%this.loseTarget();
 		
-		Parent::playDeathCry(%this);
+		%this.setMoveX(%this.gladiusMoveX);
+		%this.setMoveY(0);
 	}
 
-	function Armor::onDisabled(%this, %obj) {
-		cancel(%obj.talkSchedule);
+	%this.ai = %this.schedule(100, gladiusAttack);
+}
 
-		if(%obj.getClassName() $= "AiPlayer") {
-			if(
-				isObject(%obj.target)
-				&& isObject(%obj.target.client)
-				&& %obj.reward
-			) {
-				%obj.target.client.addCurrency(%obj.reward);
-			}
-			
-			%obj.loseTarget();
+function AiPlayer::gladiusAttackCleanup(%this, %state) {
+	// %this.setMoveX(0);
+	// %this.setMoveY(0);
 
-			if(%obj.room) {
-				%obj.room.roomOnBotKilled(%obj);
-			}
+	%this.attackCleanup();
+}
+
+function AiPlayer::gladiusSeekCleanup(%this, %state) {
+	if(getSimTime() > %this.nextGladiusAttack && %this.aiSuprise) {
+		%this.nextGladiusAttack = getSimTime() + 500;
+		%this.nextGladiusMove = getSimTime();
+	}
+
+	%this.seekCleanup();
+}
+
+function AiPlayer::gladiusCanFlank(%this) {
+	if(isObject(%this.target)) {
+		%targetPosition = %this.target.getPosition();
+		%position = %this.getPosition();
+
+		if(vectorDist(%targetPosition, %position) < 20) {
+			return !%this.gladiusHasFlanked;
 		}
-		
-		if(isObject(%obj.ai)) {
-			%obj.ai.delete();
+		else if(vectorDist(%targetPosition, %position) > 35) {
+			%this.gladiusHasFlanked = false;
+			return false;
 		}
 		else {
-			cancel(%obj.ai);
+			return false;
 		}
-
-		Parent::onDisabled(%this, %obj);
 	}
-
-	function Player::damage(%this, %col, %position, %damage, %damageType) {
-		if(%this.state !$= "") {
-			%this.target = %col;
-		}
-		
-		Parent::damage(%this, %col, %position, %damage, %damageType);
+	else {
+		return false;
 	}
-};
-activatePackage(MiniDungeonsAI);
+}
+
+function AiPlayer::gladiusOnFlank(%this) {
+	%this.gladiusHasFlanked = true;
+}

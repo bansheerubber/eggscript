@@ -12,6 +12,7 @@ class Expression:
 		level = 0
 		parent = self.parent
 		while parent:
-			level = level + 1
+			if hasattr(parent, "code_block"):
+				level = level + 1
 			parent = parent.parent
 		return level
