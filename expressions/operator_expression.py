@@ -1,4 +1,5 @@
 from config import get_config
+from regex import text_operators
 
 class OperatorExpression:
 	def __init__(self, operator):
@@ -13,7 +14,7 @@ class OperatorExpression:
 	
 	def to_script(self):
 		space = " "
-		if get_config("minify") == True:
+		if get_config("minify") == True and text_operators.match(self.operator) == None:
 			space = ""
 		
 		return f"{space}{self.operator.strip()}{space}"
