@@ -2,6 +2,7 @@ from expression import Expression
 
 class PostfixExpression(Expression):
 	def __init__(self, expression, operator):
+		super().__init__()
 		self.expression = expression
 		self.operator = operator
 	

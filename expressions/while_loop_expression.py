@@ -3,7 +3,7 @@ from expression import Expression
 
 class WhileLoopExpression(Expression):
 	def __init__(self):
-		self.expressions = []
+		super().__init__()
 		self.conditional_expressions = []
 		self.code_block = True
 	

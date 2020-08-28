@@ -1,6 +1,8 @@
-class ArgumentExpression:
+from expression import Expression
+
+class ArgumentExpression(Expression):
 	def __init__(self, expressions=[]):
-		self.expressions = expressions
+		super().__init__(expressions=expressions)
 	
 	def __str__(self):
 		return f"ArgumentExpression({self.expressions})"

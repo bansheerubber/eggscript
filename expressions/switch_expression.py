@@ -3,7 +3,7 @@ from expression import Expression
 
 class SwitchExpression(Expression):
 	def __init__(self, type):
-		self.expressions = []
+		super().__init__()
 		self.conditional_expressions = []
 		self.type = type
 		self.code_block = True

@@ -3,7 +3,7 @@ from expression import Expression
 
 class PackageExpression(Expression):
 	def __init__(self):
-		self.expressions = []
+		super().__init__()
 		self.name_symbol = None
 		self.code_block = True
 	

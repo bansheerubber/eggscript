@@ -1,10 +1,11 @@
 from config import get_config
+from expression import Expression
 from regex import template_literal_token
 
-class TemplateLiteralExpression:
+class TemplateLiteralExpression(Expression):
 	def __init__(self):
+		super().__init__()
 		self.strings = []
-		self.expressions = []
 		self.templates = []
 		self.parent = None
 	

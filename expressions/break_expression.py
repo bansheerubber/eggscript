@@ -2,7 +2,7 @@ from expression import Expression
 
 class BreakExpression(Expression):
 	def __init__(self):
-		self.expressions = []
+		super().__init__()
 	
 	def __str__(self):
 		return "BreakExpression()"

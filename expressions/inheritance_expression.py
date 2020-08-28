@@ -1,8 +1,9 @@
 from config import get_config
+from expression import Expression
 
-class InheritanceExpression:
+class InheritanceExpression(Expression):
 	def __init__(self):
-		self.expressions = []
+		super().__init__()
 		self.child_class = None
 		self.super_class = None
 	

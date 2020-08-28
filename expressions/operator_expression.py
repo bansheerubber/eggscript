@@ -1,8 +1,10 @@
 from config import get_config
+from expression import Expression
 from regex import text_operators
 
-class OperatorExpression:
+class OperatorExpression(Expression):
 	def __init__(self, operator):
+		super().__init__()
 		self.operator = operator
 		self.parent = None
 	

@@ -3,7 +3,7 @@ from expression import Expression
 
 class DatablockExpression(Expression):
 	def __init__(self):
-		self.expressions = []
+		super().__init__()
 		self.class_symbol = None
 		self.name_symbol = None
 		self.code_block = True

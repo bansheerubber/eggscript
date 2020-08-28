@@ -5,8 +5,8 @@ import re
 
 class FunctionExpression(Expression):
 	def __init__(self):
+		super().__init__()
 		self.name_symbol = None
-		self.expressions = []
 		self.argument_expressions = []
 		self.parent = None
 		self.code_block = True
@@ -17,7 +17,7 @@ class FunctionExpression(Expression):
 
 	def convert_expressions_to_arguments(self):
 		if len(self.expressions) > 0:
-			self.argument_expressions.append(ArgumentExpression(self.expressions))
+			self.argument_expressions.append(ArgumentExpression(expressions=self.expressions))
 			self.expressions = []
 	
 	def __str__(self):

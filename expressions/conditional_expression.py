@@ -3,8 +3,8 @@ from expression import Expression
 
 class ConditionalExpression(Expression):
 	def __init__(self):
+		super().__init__()
 		self.conditional_expressions = []
-		self.expressions = []
 		self.code_block = True
 		self.type = ""
 	

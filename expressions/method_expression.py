@@ -5,15 +5,15 @@ import re
 
 class MethodExpression(Expression):
 	def __init__(self, method_name):
+		super().__init__()
 		self.method_name = method_name
-		self.expressions = []
 		self.argument_expressions = []
 		self.parent = None
 		self.is_chainable = True
 	
 	def convert_expressions_to_arguments(self):
 		if len(self.expressions) > 0:
-			self.argument_expressions.append(ArgumentExpression(self.expressions))
+			self.argument_expressions.append(ArgumentExpression(expressions=self.expressions))
 			self.expressions = []
 	
 	def __str__(self):

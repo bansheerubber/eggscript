@@ -2,9 +2,9 @@ from expression import Expression
 
 class VariableAssignmentExpression(Expression):
 	def __init__(self, assignment_operator, left_hand_expression):
+		super().__init__()
 		self.assignment_operator = assignment_operator
 		self.left_hand_expression = left_hand_expression
-		self.expressions = []
 		self.parent = None
 	
 	def __str__(self):

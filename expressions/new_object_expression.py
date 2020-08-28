@@ -4,9 +4,9 @@ from expression import Expression
 
 class NewObjectExpression(Expression):
 	def __init__(self):
+		super().__init__()
 		self.class_expressions = None
 		self.argument_expressions = []
-		self.expressions = []
 		self.code_block = True
 	
 	def convert_expressions_to_class(self):
@@ -15,7 +15,7 @@ class NewObjectExpression(Expression):
 	
 	def convert_expressions_to_arguments(self):
 		if len(self.expressions) > 0:
-			self.argument_expressions.append(ArgumentExpression(self.expressions))
+			self.argument_expressions.append(ArgumentExpression(expressions=self.expressions))
 			self.expressions = []
 	
 	def __str__(self):

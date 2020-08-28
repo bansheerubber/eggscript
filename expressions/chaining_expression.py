@@ -2,7 +2,7 @@ from expression import Expression
 
 class ChainingExpression(Expression):
 	def __init__(self):
-		self.expressions = []
+		super().__init__()
 		self.parent = None
 	
 	def __str__(self):

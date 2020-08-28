@@ -1,6 +1,8 @@
-class ParenthesesExpression:
+from expression import Expression
+
+class ParenthesesExpression(Expression):
 	def __init__(self):
-		self.expressions = []
+		super().__init__()
 		self.parent = None
 		self.is_chainable = True
 	

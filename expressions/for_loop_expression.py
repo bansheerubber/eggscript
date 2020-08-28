@@ -3,7 +3,7 @@ from expression import Expression
 
 class ForLoopExpression(Expression):
 	def __init__(self):
-		self.expressions = []
+		super().__init__()
 		self.initiation_expressions = []
 		self.conditional_expressions = []
 		self.increment_expressions = []
