@@ -4,6 +4,7 @@ class NamespaceExpression(Expression):
 	def __init__(self):
 		self.expressions = []
 		self.parent = None
+		self.is_chainable = True
 	
 	def __str__(self):
 		return f"NamespaceExpression({self.expressions})"

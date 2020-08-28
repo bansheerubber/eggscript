@@ -9,6 +9,7 @@ class MethodExpression(Expression):
 		self.expressions = []
 		self.argument_expressions = []
 		self.parent = None
+		self.is_chainable = True
 	
 	def convert_expressions_to_arguments(self):
 		if len(self.expressions) > 0:

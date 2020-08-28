@@ -276,7 +276,7 @@ class Tokenizer:
 	
 	def read_chaining_expression(self, tree, inheritable_give_back_stop_at):
 		first_expression = None
-		if len(tree.expressions) > 0 and type(tree.expressions[-1]) is ParenthesesExpression:
+		if len(tree.expressions) > 0 and hasattr(tree.expressions[-1], "is_chainable"):
 			first_expression = tree.expressions.pop()
 		else:
 			first_expression = self.get_symbol(self.buffer)
@@ -300,7 +300,7 @@ class Tokenizer:
 		try:
 			self.file.give_character_back()
 			while self.file.read_character() == ":" and self.file.read_character() == ":":
-				self.tokenize(stop_ats=[], give_back_stop_ats=inheritable_give_back_stop_at + [semicolon_token, namespace_token, operator_token_without_concatenation, closing_parenthesis_token, closing_bracket_token], tree=namespace_expression)
+				self.tokenize(stop_ats=[], give_back_stop_ats=inheritable_give_back_stop_at + [semicolon_token, namespace_token, operator_token_without_concatenation, closing_parenthesis_token, closing_bracket_token, chaining_token], tree=namespace_expression)
 			self.file.give_character_back()
 		except:
 			pass # if we hit an EOF, just ignore it
@@ -503,7 +503,7 @@ class Tokenizer:
 					and valid_symbol.match(self.buffer)
 					or (
 						len(tree.expressions) > 0
-						and type(tree.expressions[-1]) is ParenthesesExpression
+						and hasattr(tree.expressions[-1], "is_chainable")
 						and valid_symbol.match(self.buffer) == None
 					)
 				): # handle chaining (%test.test.test.test...)
