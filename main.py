@@ -1,4 +1,4 @@
-from config import set_config, get_config
+from config import set_config, get_config, add_exported_lines, add_read_file
 from file import File
 from tokenizer import Tokenizer
 from script_file import ScriptFile
@@ -65,6 +65,8 @@ def transpile_file(filename, output_directory="./", file_replacement="{}.cs"):
 
 	file = open(output.absolute(), "w")
 	file.write(script)
+	add_exported_lines(script.count("\n") + 1)
+	add_read_file()
 	file.close()
 
 optionlist, args = getopt.getopt(sys.argv[1:], "hmcvo:f:", ["help", "minify", "no-comments", "output=", "file-replace=", "include-cs", "verbose"])
@@ -98,6 +100,11 @@ if len(args) > 0:
 				scan_directory(arg, output_directory=get_config("output"), file_replacement=get_config("filereplace"))
 			else:
 				transpile_file(arg, output_directory=get_config("output"), file_replacement=get_config("filereplace"))
+			
+			parsed_lines = get_config("parsedlines")
+			exported_lines = get_config("exportedlines")
+			number_of_files = get_config("readfiles")
+			print(f"Read {number_of_files} files, parsed {parsed_lines} lines, exported {exported_lines} lines")
 		else:
 			if "-" in arg:
 				print(f"Failed to read file or directory '{arg}' (are options before files and directories? eggscript [options] [files or directory])")

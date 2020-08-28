@@ -3,6 +3,7 @@ sys.path.insert(0, "./expressions")
 sys.path.insert(0, "./misc")
 
 from config import get_config
+import traceback
 
 from array_access_expression import ArrayAccessExpression
 from break_expression import BreakExpression
@@ -27,7 +28,7 @@ from parentheses_expression import ParenthesesExpression
 from postfix_expression import PostfixExpression
 from template_literal_expression import TemplateLiteralExpression
 from tokenizer_exception import TokenizerException
-from regex import chaining_token, closing_curly_bracket_token, closing_bracket_token, closing_parenthesis_token, colon_token, comma_token, digits, keywords, modulus_next_character_token, namespace_token, opening_curly_bracket_token, opening_bracket_token, opening_parenthesis_token, operator_token, operator_token_only_concatenation, operator_token_without_concatenation, parentheses_token, part_of_operator, template_literal_token, semicolon_token, space_token, string_token, valid_assignment, valid_break, valid_case, valid_comment, valid_conditional, valid_continue, valid_default, valid_datablock, valid_for, valid_function, valid_new, valid_operator, valid_package, valid_postfix, valid_return, valid_symbol, valid_switch, valid_switch_string, valid_while, variable_token
+from regex import chaining_token, closing_curly_bracket_token, closing_bracket_token, closing_parenthesis_token, colon_token, comma_token, digits, keywords, modulus_next_character_token, namespace_token, opening_curly_bracket_token, opening_bracket_token, opening_parenthesis_token, operator_token, operator_token_only_concatenation, operator_token_without_concatenation, parentheses_token, part_of_operator, template_literal_token, semicolon_token, string_token, valid_assignment, valid_break, valid_case, valid_comment, valid_conditional, valid_continue, valid_default, valid_datablock, valid_for, valid_function, valid_new, valid_operator, valid_package, valid_postfix, valid_return, valid_symbol, valid_switch, valid_switch_string, valid_while, variable_token
 from return_expression import ReturnExpression
 from string_literal import StringLiteral
 from symbol import Symbol
@@ -113,8 +114,7 @@ class Tokenizer:
 		switch_type = "switch"
 		if char == "$":
 			switch_type = "switch$"
-		else:
-			self.file.read_character()
+		self.file.read_character()
 		
 		expression = SwitchExpression(switch_type)
 		
@@ -202,9 +202,7 @@ class Tokenizer:
 		if buffer == "else":
 			buffer = buffer + " " + self.file.read_character() + self.file.read_character()
 			if buffer != "else if":
-				self.file.give_character_back()
-				self.file.give_character_back()
-				self.file.give_character_back()
+				self.file.give_characters_back("e")
 				buffer = "else"
 		
 		expression.type = buffer
@@ -213,8 +211,8 @@ class Tokenizer:
 			self.file.read_character() # absorb first "("
 			self.tokenize(stop_ats=[closing_parenthesis_token], tree=expression)
 			expression.move_expressions()
-
-		self.file.read_character()
+		
+		self.file.read_character() # absorb first "{"
 		self.tokenize(stop_ats=[closing_curly_bracket_token], tree=expression)
 
 		return expression
@@ -276,13 +274,20 @@ class Tokenizer:
 			template_literal.strings = output
 			return template_literal
 	
-	def read_chaining_expression(self, first_symbol_name, inheritable_give_back_stop_at):
+	def read_chaining_expression(self, tree, inheritable_give_back_stop_at):
+		first_expression = None
+		if len(tree.expressions) > 0 and type(tree.expressions[-1]) is ParenthesesExpression:
+			first_expression = tree.expressions.pop()
+		else:
+			first_expression = self.get_symbol(self.buffer)
+			self.buffer = ""
+		
 		chaining_expression = ChainingExpression()
-		self.add_expression(chaining_expression, self.get_symbol(first_symbol_name))
+		self.add_expression(chaining_expression, first_expression)
 		try:
 			self.file.give_character_back()
 			while self.file.read_character() == ".":
-				self.tokenize(stop_ats=[], give_back_stop_ats=inheritable_give_back_stop_at + [semicolon_token, chaining_token, operator_token_without_concatenation, closing_parenthesis_token, closing_bracket_token, space_token], tree=chaining_expression, read_spaces=True)
+				self.tokenize(stop_ats=[], give_back_stop_ats=inheritable_give_back_stop_at + [semicolon_token, chaining_token, operator_token_without_concatenation, closing_parenthesis_token, closing_bracket_token], tree=chaining_expression)
 			self.file.give_character_back()
 		except:
 			pass # if we hit an EOF, just ignore it
@@ -295,7 +300,7 @@ class Tokenizer:
 		try:
 			self.file.give_character_back()
 			while self.file.read_character() == ":" and self.file.read_character() == ":":
-				self.tokenize(stop_ats=[], give_back_stop_ats=inheritable_give_back_stop_at + [semicolon_token, namespace_token, operator_token_without_concatenation, closing_parenthesis_token, closing_bracket_token, space_token], tree=namespace_expression, read_spaces=True)
+				self.tokenize(stop_ats=[], give_back_stop_ats=inheritable_give_back_stop_at + [semicolon_token, namespace_token, operator_token_without_concatenation, closing_parenthesis_token, closing_bracket_token], tree=namespace_expression)
 			self.file.give_character_back()
 		except:
 			pass # if we hit an EOF, just ignore it
@@ -383,144 +388,153 @@ class Tokenizer:
 			except:
 				break
 			
-			for stop_at in buffer_give_back_stop_at:
-				if stop_at.match(self.buffer):
-					self.file.current_index = self.file.current_index - len(self.buffer) - 2
-					self.buffer = ""
-					return tree
-		
-			for stop_at in give_back_stop_ats:
-				if stop_at.match(char):
-					self.absorb_buffer(tree)
-					self.file.give_character_back()
-					return tree
+			try:
+				for stop_at in buffer_give_back_stop_at:
+					if stop_at.match(self.buffer):
+						self.file.current_index = self.file.current_index - len(self.buffer) - 2
+						self.buffer = ""
+						return tree
 			
-			for stop_at in stop_ats:
-				if stop_at.match(char):
-					self.absorb_buffer(tree)
-					return tree
-			
-			# handle keyword matching (function, for, if, etc)
-			if(
-				keywords.match(self.buffer)
-				and keywords.match(self.buffer + char) == None
-				and (
-					valid_symbol.match(self.buffer + char) == None
-					or self.file.skipped_space
-				)
-				and type(tree) is not NewObjectExpression
-			):
-				if valid_conditional.match(self.buffer): # handle conditionals
-					self.add_expression(tree, self.read_conditional(self.buffer))
-					self.buffer = ""
-				elif valid_for.match(self.buffer): # handle for loops
-					self.add_expression(tree, self.read_for_loop())
-					self.buffer = ""
-				elif valid_while.match(self.buffer): # handle while loops
-					self.add_expression(tree, self.read_while_loop())
-					self.buffer = ""
-				elif valid_function.match(self.buffer): # handle functions
-					self.add_expression(tree, self.read_function())
-					self.buffer = ""
-				elif valid_switch.match(self.buffer): # handle switch statements
-					self.add_expression(tree, self.read_switch())
-					self.buffer = ""
-				elif valid_switch_string.match(self.buffer): # handle switch string statements
-					self.add_expression(tree, self.read_switch())
-					self.buffer = ""
-				elif valid_case.match(self.buffer): # handle case statements
-					self.add_expression(tree, self.read_case())
-					self.buffer = ""
-				elif valid_default.match(self.buffer): # handle default statement
-					self.add_expression(tree, self.read_default())
-					self.buffer = ""
-				elif valid_package.match(self.buffer): # handle packages
-					self.add_expression(tree, self.read_package())
-					self.buffer = ""
-				elif valid_return.match(self.buffer): # handle returns
-					self.add_expression(tree, self.read_return())
-					self.buffer = ""
-				elif valid_continue.match(self.buffer): # handle continues
-					self.add_expression(tree, self.read_continue())
-					self.buffer = ""
-				elif valid_break.match(self.buffer): # handle breaks
-					self.add_expression(tree, self.read_break())
-					self.buffer = ""
-				elif valid_datablock.match(self.buffer): # handle datablocks
-					self.add_expression(tree, self.read_datablock())
-					self.buffer = ""
-				elif valid_new.match(self.buffer): # handle object creation
-					self.add_expression(tree, self.read_new())
-					self.buffer = ""
+				for stop_at in give_back_stop_ats:
+					if stop_at.match(char):
+						self.absorb_buffer(tree)
+						self.file.give_character_back()
+						return tree
 				
-				continue
-		
-			if (
-				operator_token.match(char)
-				and (
-					self.file.current_line_index > self.operator_ban[0]
-					or self.file.current_index > self.operator_ban[1]
-				)
-			): # handle operators
-				if comma_token.match(char): # handle commas in special case
-					if (
-						type(tree) is MethodExpression
-						or type(tree) is FunctionExpression
-						or type(tree) is ArrayAccessExpression
-						or type(tree) is NewObjectExpression
-					):
+				for stop_at in stop_ats:
+					if stop_at.match(char):
 						self.absorb_buffer(tree)
-						tree.convert_expressions_to_arguments()
-				else:
-					operator = self.read_operator()
-					if operator != None:
-						self.absorb_buffer(tree)
-						if valid_comment.match(operator.operator):
-							comment = self.read_comment()
-							if get_config("nocomments") != True:
-								self.add_expression(tree, comment)
-						elif valid_assignment.match(operator.operator):
-							# take last expression and use that as left hand for variable assignment
-							last_expression = tree.expressions.pop()
-							new_expression = self.read_variable_assignment(operator, last_expression, stop_ats)
-							last_expression.parent = new_expression
-							self.add_expression(tree, new_expression)
-						elif valid_postfix.match(operator.operator):
-							# take last expression and use that for postfix operation
-							last_expression = tree.expressions.pop()
-							new_expression = PostfixExpression(last_expression, operator)
-							last_expression.parent = new_expression
-							self.add_expression(tree, new_expression)
-						else:
-							self.add_expression(tree, operator)
-			elif chaining_token.match(char) and valid_symbol.match(self.buffer): # handle chaining (%test.test.test.test...)
-				if valid_symbol.match(self.buffer):
-					# if we have a valid symbol, then build chaining expression from remaining valid symbols
-					self.add_expression(tree, self.read_chaining_expression(self.buffer, inheritable_give_back_stop_at))
+						return tree
+				
+				# handle keyword matching (function, for, if, etc)
+				if(
+					keywords.match(self.buffer)
+					and keywords.match(self.buffer + char) == None
+					and (
+						valid_symbol.match(self.buffer + char) == None
+						or self.file.skipped_space
+					)
+					and type(tree) is not NewObjectExpression
+				):
+					if valid_conditional.match(self.buffer): # handle conditionals
+						self.add_expression(tree, self.read_conditional(self.buffer))
+						self.buffer = ""
+					elif valid_for.match(self.buffer): # handle for loops
+						self.add_expression(tree, self.read_for_loop())
+						self.buffer = ""
+					elif valid_while.match(self.buffer): # handle while loops
+						self.add_expression(tree, self.read_while_loop())
+						self.buffer = ""
+					elif valid_function.match(self.buffer): # handle functions
+						self.add_expression(tree, self.read_function())
+						self.buffer = ""
+					elif valid_switch.match(self.buffer): # handle switch statements
+						self.add_expression(tree, self.read_switch())
+						self.buffer = ""
+					elif valid_switch_string.match(self.buffer): # handle switch string statements
+						self.add_expression(tree, self.read_switch())
+						self.buffer = ""
+					elif valid_case.match(self.buffer): # handle case statements
+						self.add_expression(tree, self.read_case())
+						self.buffer = ""
+					elif valid_default.match(self.buffer): # handle default statement
+						self.add_expression(tree, self.read_default())
+						self.buffer = ""
+					elif valid_package.match(self.buffer): # handle packages
+						self.add_expression(tree, self.read_package())
+						self.buffer = ""
+					elif valid_return.match(self.buffer): # handle returns
+						self.add_expression(tree, self.read_return())
+						self.buffer = ""
+					elif valid_continue.match(self.buffer): # handle continues
+						self.add_expression(tree, self.read_continue())
+						self.buffer = ""
+					elif valid_break.match(self.buffer): # handle breaks
+						self.add_expression(tree, self.read_break())
+						self.buffer = ""
+					elif valid_datablock.match(self.buffer): # handle datablocks
+						self.add_expression(tree, self.read_datablock())
+						self.buffer = ""
+					elif valid_new.match(self.buffer): # handle object creation
+						self.add_expression(tree, self.read_new())
+						self.buffer = ""
+					
+					continue
+			
+				if (
+					operator_token.match(char)
+					and (
+						self.file.current_line_index > self.operator_ban[0]
+						or self.file.current_index > self.operator_ban[1]
+					)
+				): # handle operators
+					if comma_token.match(char): # handle commas in special case
+						if (
+							type(tree) is MethodExpression
+							or type(tree) is FunctionExpression
+							or type(tree) is ArrayAccessExpression
+							or type(tree) is NewObjectExpression
+						):
+							self.absorb_buffer(tree)
+							tree.convert_expressions_to_arguments()
+					else:
+						operator = self.read_operator()
+						if operator != None:
+							self.absorb_buffer(tree)
+							if valid_comment.match(operator.operator):
+								comment = self.read_comment()
+								if get_config("nocomments") != True:
+									self.add_expression(tree, comment)
+							elif valid_assignment.match(operator.operator):
+								# take last expression and use that as left hand for variable assignment
+								last_expression = tree.expressions.pop()
+								new_expression = self.read_variable_assignment(operator, last_expression, stop_ats)
+								last_expression.parent = new_expression
+								self.add_expression(tree, new_expression)
+							elif valid_postfix.match(operator.operator):
+								# take last expression and use that for postfix operation
+								last_expression = tree.expressions.pop()
+								new_expression = PostfixExpression(last_expression, operator)
+								last_expression.parent = new_expression
+								self.add_expression(tree, new_expression)
+							else:
+								self.add_expression(tree, operator)
+				elif (chaining_token.match(char)
+					and valid_symbol.match(self.buffer)
+					or (
+						len(tree.expressions) > 0
+						and type(tree.expressions[-1]) is ParenthesesExpression
+						and valid_symbol.match(self.buffer) == None
+					)
+				): # handle chaining (%test.test.test.test...)
+					self.add_expression(tree, self.read_chaining_expression(tree, inheritable_give_back_stop_at))
 					self.buffer = "" # absorb buffer
-				else:
-					raise TokenizerException(self, f"Invalid symbol for chain expression '{self.buffer}'")
-			elif namespace_token.match(char): # handle namespaces ($Test::frog:egg...)
-				if valid_symbol.match(self.buffer):
-					# if we have a valid symbol, then build chaining expression from remaining valid symbols
-					self.add_expression(tree, self.read_namespace_expression(self.buffer, inheritable_give_back_stop_at))
-					self.buffer = "" # absorb buffer
-				else:
-					raise TokenizerException(self, f"Invalid symbol for namespace expression '{self.buffer}'")
-			elif semicolon_token.match(char):
-				# just absorb the character and move on, we have automatic semicolon placement
-				self.absorb_buffer(tree)
-			elif string_token.match(char): # handle strings
-				string = self.read_string()
-				self.add_expression(tree, string)
-			elif parentheses_token.match(char):
-				if opening_parenthesis_token.match(char) and valid_symbol.match(self.buffer) == None: # handle math parentheses
-					self.add_expression(tree, self.read_parentheses_expression())
-				elif opening_parenthesis_token.match(char) and valid_symbol.match(self.buffer) != None: # handle method parentheses
-					self.add_expression(tree, self.read_method_expression(self.buffer))
-			elif opening_bracket_token.match(char): # handle array accessing
-				self.add_expression(tree, self.read_array_access_expression())
-				self.buffer = ""
-			else: # when in doubt, add to buffer
-				self.buffer = self.buffer + char
+				elif namespace_token.match(char): # handle namespaces ($Test::frog:egg...)
+					if valid_symbol.match(self.buffer):
+						# if we have a valid symbol, then build chaining expression from remaining valid symbols
+						self.add_expression(tree, self.read_namespace_expression(self.buffer, inheritable_give_back_stop_at))
+						self.buffer = "" # absorb buffer
+					else:
+						raise Exception(f"Invalid symbol for namespace expression '{self.buffer}'")
+				elif semicolon_token.match(char):
+					# just absorb the character and move on, we have automatic semicolon placement
+					self.absorb_buffer(tree)
+				elif string_token.match(char): # handle strings
+					string = self.read_string()
+					self.add_expression(tree, string)
+				elif parentheses_token.match(char):
+					if opening_parenthesis_token.match(char) and valid_symbol.match(self.buffer) == None: # handle math parentheses
+						self.add_expression(tree, self.read_parentheses_expression())
+					elif opening_parenthesis_token.match(char) and valid_symbol.match(self.buffer) != None: # handle method parentheses
+						self.add_expression(tree, self.read_method_expression(self.buffer))
+				elif opening_bracket_token.match(char): # handle array accessing
+					self.add_expression(tree, self.read_array_access_expression())
+					self.buffer = ""
+				else: # when in doubt, add to buffer
+					self.buffer = self.buffer + char
+			except Exception as error:
+				traceback.print_stack()
+				print(f"Encountered exception '{error.__str__()}' at line #{self.file.line_count} character #{self.file.current_index}")
+				return None
+
 		return tree
