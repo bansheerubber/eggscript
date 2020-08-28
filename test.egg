@@ -1,293 +1,148 @@
-function clearPathfinding() {
-	deleteVariables("$MD::Node*");
-}
-
-datablock fxDTSBrickData(BrickPathfindingNodeData) {
-	brickFile = "base/data/bricks/flats/1x1f.blb";
-	category = "Special";
-	subCategory = "DUNGEONS!!!!!!!!";
-	uiName = "Pathfinding Node";
-	iconName = "base/client/ui/brickIcons/1x1F";
-	isInteractable = true;
+datablock AudioProfile(GladiusDeath1Sound) {
+	filename    = "./sounds/gladius death1.wav";
+	description = AudioDefault3d;
+	preload = true;
 };
 
-function BrickPathfindingNodeData::onPlant(%this, %obj) {
-	Parent::onPlant(%this, %obj);
-	
-	if(!%obj.getGroup().pathfindingNodes) {
-		%obj.getGroup().pathfindingNodes = new SimSet();
+datablock AudioProfile(GladiusDeath2Sound) {
+	filename    = "./sounds/gladius death2.wav";
+	description = AudioDefault3d;
+	preload = true;
+};
+
+datablock AudioProfile(GladiusDeath3Sound) {
+	filename    = "./sounds/gladius death3.wav";
+	description = AudioDefault3d;
+	preload = true;
+};
+
+function createGladiusAi(%transform, %roomIndex) {
+	%ai = new AiPlayer() {
+		datablock = MiniDungeonsArmor;
+		position = getWords(%transform, 0, 2);
+		rotation = "0 0 0 1";
+
+		idleDrawDistance = 200;
+		idleThirdSenseDistance = 5;
+		idleFOV = 360;
+		attackRange = 7;
+		idle = "idle";
+		seek = "seek";
+		canFlank = "gladiusCanFlank";
+		onFlank = "gladiusOnFlank";
+		flankStopDistance = 5; // distance at which we stop flanking
+		attack = "gladiusAttack";
+
+		idleCleanup = "idleCleanup";
+		seekCleanup = "gladiusSeekCleanup";
+		attackCleanup = "gladiusAttackCleanup";
+
+		reward = 1;
+
+		seekHeightCheck = true;
+
+		customDeathCry = "GladiusDeath" @ getRandom(1, 3) @ "Sound";
+
+		isEnemyAi = true;
+		isBot = true;
+
+		name = generateRandomName();
+	};
+	%ai.setTransform(%transform);
+	%ai.setAIState($MD::AiIdle);
+	%ai.setMaxSideSpeed(MiniDungeonsArmor.maxForwardSpeed);
+
+	%ai.setShapeName(%ai.name, 8564862);
+	%ai.setShapeNameDistance(50);
+
+	GladiusSwordArmor.mount(%ai, 0);
+
+	%ai.setAvatar("gladius");
+
+	%ai.onSpawn(%roomIndex);
+
+	return %ai;
+}
+
+function AiPlayer::gladiusAttack(%this) {
+	if(!%this.hasValidTarget()) {
+		%this.loseTarget();
+		%this.setAiState($MD::AiIdle);
+		return;
 	}
 
-	%obj.getGroup().pathfindingNodes.add(%obj);
-}
+	%targetPosition = %this.target.getPosition();
+	%position = %this.getPosition();
 
-function BrickPathfindingNodeData::onLoadPlant(%this, %obj) {
-	Parent::onLoadPlant(%this, %obj);
-	
-	if(!%obj.getGroup().pathfindingNodes) {
-		%obj.getGroup().pathfindingNodes = new SimSet();
-	}
+	if(
+		getSimTime() > %this.nextGladiusAttack
+		&& mAbs(getWord(%targetPosition, 2) - getWord(%position, 2)) < 2
+	) {
+		%this.setSwordTrigger(0, true);
+		%this.schedule(1400, setSwordTrigger, 0, false);
 
-	%obj.getGroup().pathfindingNodes.add(%obj);
-}
+		%this.setAimObject(%this.target);
+		%this.setMoveX(getRandom(0, 1) ? -0.3 : 0.3);
+		%this.setMoveY(0.4);
 
-function BrickPathfindingNodeData::onInteract(%this, %obj, %interactee) {
-	if(%interactee.client.buildmode) {
-		%obj.isGraphMode = true;
-		if(!isEventPending(%obj.visualizeNeighbors)) {
-			if(!isObject(%obj.debugLines)) {
-				%obj.debugLines = new SimSet();
-			}
-			
-			%obj.visualizeNeighbors();
-		}
-
-		cancel(%obj.stopVisualizeNeighbors);
-		%obj.stopVisualizeNeighbors = %obj.schedule(120000, stopVisualizeNeighbors);
-	}
-}
-
-function BrickPathfindingNodeData::onLook(%this, %obj, %interactee) {
-	if(%interactee.client.buildmode) {
-		if(!isEventPending(%obj.visualizeNeighbors)) {
-			if(!isObject(%obj.debugLines)) {
-				%obj.debugLines = new SimSet();
-			}
-			
-			%obj.visualizeNeighbors();
-		}
-
-		if(!%obj.isGraphMode) {
-			cancel(%obj.stopVisualizeNeighbors);
-			%obj.stopVisualizeNeighbors = %obj.schedule(200, stopVisualizeNeighbors);
-		}
-	}
-}
-
-function BrickPathfindingNodeData::onAdd(%this, %obj) {
-	Parent::onAdd(%this, %obj);
-
-	if(!%obj.isPlanted) {
-		%obj.debugLines = new SimSet();
-		%obj.visualizeNeighbors();
-	}
-}
-
-function BrickPathfindingNodeData::onRemove(%this, %obj) {
-	if(%obj.debugLines) {
-		%obj.debugLines.deleteAll();
-		%obj.debugLines.delete();
-	}
-	
-	Parent::onRemove(%this, %obj);
-}
-
-function fxDTSBrick::stopVisualizeNeighbors(%this) {
-	%this.debugLines.deleteAll();
-	cancel(%this.visualizeNeighbors);
-	%this.lastPosition = "";
-	%this.isGraphMode = false;
-}
-
-function fxDTSBrick::visualizeNeighbors(%this) {
-	cancel(%this.visualizeNeighbors);
-
-	if(%this.lastPosition !$= %this.getPosition()) {
-		%this.debugLines.deleteAll();
+		%this.playThread(0, "plant");
 		
-		initContainerRadiusSearch(%this.getPosition(), 14, $TypeMasks::fxBrickObjectType);
-		while(%col = containerSearchNext()) {
-			%raycast = containerRaycast(%this.getPosition(), %col.getPosition(), $TypeMasks::fxBrickObjectType, %this);
-			if(%col != %this && %col.getDatablock().getName() $= "BrickPathfindingNodeData" && getWord(%raycast, 0) == %col) {
-				%this.debugLines.add(drawDebugLine(%this.getPosition(), %col.getPosition(), 0.1, "1 0 0 1", -1));
-			}
-		}
-		%this.lastPosition = %this.getPosition();
+		%this.nextGladiusAttack = getSimTime() + 2000;
+		%this.nextGladiusMove = getSimTime() + 1000;
+		%this.gladiusMoveX = getRandom(0, 1) ? -1 : 1;
 	}
 
-	%this.visualizeNeighbors = %this.schedule(33, visualizeNeighbors);
-}
-
-function testNavmesh(%brickGroup, %id) {
-	$MD::PathTCP.send("create_navmesh" SPC %id @ "\n");
-
-	%count = %brickGroup.getCount();
-	for(%i = 0; %i < %count; %i++) {
-		%brick = %brickGroup.getObject(%i);
-		if(%brick.getDatablock().getName() $= "BrickPathfindingNodeData") {
-			$MD::PathTCP.send("add_navmesh" SPC %id SPC %brick.getPosition() @ "\n");
+	if(getSimTime() > %this.nextGladiusMove) {
+		%raycast = containerRaycast(%this.getEyePoint(), %this.target.getHackPosition(), $TypeMasks::fxBrickObjectType | $TypeMasks::PlayerObjectType, %this);
+		if(vectorDist(%targetPosition, %position) > %this.attackRange || getWord(%raycast, 0) != %this.target) {
+			%this.setAiState($MD::AiSeek);
+			return;
 		}
+		
+		%this.setMoveX(%this.gladiusMoveX);
+		%this.setMoveY(0);
 	}
 
-	$MD::PathTCP.send("test_navmesh" SPC %id @ "\n");
+	%this.ai = %this.schedule(100, gladiusAttack);
 }
 
-function addNeighbor(%id1, %id2) {
-	if(!$MD::NodeNeighbor[%id1, %id2]) {
-		$MD::PathTCP.send("neighbor" SPC %id1 SPC %id2 @ "\n");
-		$MD::NodeNeighbor[%id1, %id2] = true;
-		addNeighbor(%id1, %id2);
+function AiPlayer::gladiusAttackCleanup(%this, %state) {
+	// %this.setMoveX(0);
+	// %this.setMoveY(0);
+
+	%this.attackCleanup();
+}
+
+function AiPlayer::gladiusSeekCleanup(%this, %state) {
+	if(getSimTime() > %this.nextGladiusAttack && %this.aiSuprise) {
+		%this.nextGladiusAttack = getSimTime() + 500;
+		%this.nextGladiusMove = getSimTime();
 	}
+
+	%this.seekCleanup();
 }
 
-function fxDTSBrick::searchNeighbors(%this) {
-	%count = %this.room.pathfindingBricks.getCount();
-	for(%i = 0; %i < %count; %i++) {
-		%brick = %this.room.pathfindingBricks.getObject(%i);
+function AiPlayer::gladiusCanFlank(%this) {
+	if(isObject(%this.target)) {
+		%targetPosition = %this.target.getPosition();
+		%position = %this.getPosition();
 
-		if(%brick == %this) {
-			continue;
+		if(vectorDist(%targetPosition, %position) < 20) {
+			return !%this.gladiusHasFlanked;
 		}
-
-		%raycast = containerRaycast(%this.getPosition(), %brick.getPosition(), $TypeMasks::fxBrickObjectType, %this);
-		if(
-			(
-				%brick.getName() $= "_node"
-				|| %brick.getDatablock().getName() $= "BrickPathfindingNodeData"
-			)
-			&& getWord(%raycast, 0) == %brick
-			&& vectorDist(%this.getPosition(), %brick.getPosition()) < 14.5
-		) {
-			addNeighbor(%this.nodeId, %brick.nodeId);
-			// drawDebugLine(%this.getPosition(), %brick.getPosition(), 0.2, "1 0 0 1", 15000);
+		else if(vectorDist(%targetPosition, %position) > 35) {
+			%this.gladiusHasFlanked = false;
+			return false;
+		}
+		else {
+			return false;
 		}
 	}
-}
-
-function buildNodesFromBricks(%brickGroup, %start) {
-	if(%start == 0) {
-		clearPathfinding();
-		echo("Cleared pathfinding");
-	}
-	
-	if($MD::NodeCount $= "") {
-		$MD::NodeCount = 0;
-	}
-
-	// do pathfinding bricks
-	%count = %brickGroup.pathfindingNodes.getCount();
-	for(%i = (%start | 0); (%i < %count) && (%i < %start + 100); %i++) {
-		%brick = %brickGroup.pathfindingNodes.getObject(%i);
-		%brick.nodeId = $MD::NodeCount;
-		%brick.room = getRoomFromPosition(%brick.getPosition());
-		$MD::Node[$MD::NodeCount] = %brick.getPosition();
-		$MD::PathTCP.send("add" SPC $MD::NodeCount SPC %brick.getPosition() @ "\n");
-		$MD::NodeCount++;
-	}
-
-	schedule(100, 0, buildNodesFromBricks, %brickGroup, %start + 100);
-}
-
-function buildNeighborsFromBricks(%brickGroup) {
-	%count = %brickGroup.pathfindingNodes.getCount();
-	for(%i = 0; %i < %count; %i++) {
-		%brickGroup.pathfindingNodes.getObject(%i).searchNeighbors();
-	}
-	$MD::PathTCP.send("simplify\n");
-}
-
-function getClosestNode(%position) {
-	%nodeId = -1;
-	%radius = 20;
-	%minDistance = %radius;
-
-	%room = getRoomFromPosition(%position);
-	%count = %room.pathfindingBricks.getCount();
-	for(%i = 0; %i < %count; %i++) {
-		%brick = %room.pathfindingBricks.getObject(%i);
-		if(
-			(
-				%brick.getName() $= "_node"
-				|| %brick.getDatablock().getName() $= "BrickPathfindingNodeData"
-			)
-			&& (%distance = vectorDist(%brick.getPosition(), %position)) < %minDistance
-		) {
-			%raycast = containerRaycast(%position, %brick.getPosition(), $TypeMasks::fxBrickObjectType);
-			if(getWord(%raycast, 0) == %brick) {
-				%minDistance = %distance;
-				%nodeId = %brick.nodeId;
-			}
-		}
-	}
-	return %nodeId;
-}
-
-function createPathfindingClient() {
-	%file = new FileObject();
-	%file.openForRead("Add-Ons/Server_MiniDungeons/pathfinding/server.info");
-	%ip = %file.readLine();
-	%port = %file.readLine();
-	%file.close();
-	
-	%tcp = new TCPObject(MiniDungeonsPathfinding);
-	%tcp.connect(%ip @ ":" @ %port);
-	return %tcp;
-}
-
-function initPathfinding() {
-	$MD::PathTCP = createPathfindingClient();
-}
-
-function visualizePathfinding() {
-	$MD::PathTCP.send("visualize\n");
-}
-
-function MiniDungeonsPathfinding::onConnected(%this) {
-	echo("MiniDungeonsPathfinding - TCP connected");
-}
-
-function MiniDungeonsPathfinding::onDisconnect(%this) {
-	echo("MiniDungeonsPathfinding - TCP disconnected");
-}
-
-function MiniDungeonsPathfinding::onConnectFailed(%this) {
-	echo("MiniDungeonsPathfinding - TCP connection failed");
-}
-
-function MiniDungeonsPathfinding::onLine(%this, %data) {
-	%command = getWord(%data, 0);
-	if(%command $= "path") {
-		%id = getWord(%data, 1);
-		if(isObject(%bot = $MD::PathIDTable[%id])) {
-			%bot.setPath(%data);
-		}
-	}
-	else if(%command $= "error") {
-		%id = getWord(%data, 1);
-		if(isObject(%bot = $MD::PathIDTable[%id])) {
-			%bot.setPath("");
-		}
-		warn("Failed to get path for bot" SPC $MD::PathIDTable[%id]);
+	else {
+		return false;
 	}
 }
 
-function AiPlayer::requestPath(%this, %startNode, %endNode, %started) {
-	$MD::PathIDTable[$MD::PathIDTableCount | 0] = %this;
-	$MD::PathTCP.send("path" SPC ($MD::PathIDTableCount | 0) SPC %startNode SPC %endNode @ "\n");
-	$MD::PathIDTableCount++;
-}
-
-function AiPlayer::hasPath(%this) {
-	return %this.pathCount != 0;
-}
-
-function AiPlayer::hasPathOrTimeout(%this) {
-	return %this.pathCount != 0 || (getSimTime() > %this.lastPathRequest + 2000);
-}
-
-function AiPlayer::setPath(%this, %path) {
-	%count = getWordCount(%path);
-	%this.pathCount = 0;
-	for(%i = 2; %i < %count; %i++) {
-		%id = getWord(%path, %i);
-		%this.path[%this.pathCount] = $MD::Node[%id];
-		%this.pathCount++;
-	}
-	%this.currentPathIndex = 0;
-}
-
-function AiPlayer::resetPath(%this) {
-	%this.path = "";
-	%this.pathCount = 0;
-	%this.currentPathIndex = 0;
+function AiPlayer::gladiusOnFlank(%this) {
+	%this.gladiusHasFlanked = true;
 }

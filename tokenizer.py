@@ -27,7 +27,7 @@ from parentheses_expression import ParenthesesExpression
 from postfix_expression import PostfixExpression
 from template_literal_expression import TemplateLiteralExpression
 from tokenizer_exception import TokenizerException
-from regex import chaining_token, closing_curly_bracket_token, closing_bracket_token, closing_parenthesis_token, colon_token, comma_token, digits, keywords, namespace_token, opening_curly_bracket_token, opening_bracket_token, opening_parenthesis_token, operator_token, operator_token_only_concatenation, operator_token_without_concatenation, parentheses_token, part_of_operator, template_literal_token, semicolon_token, space_token, string_token, valid_assignment, valid_break, valid_case, valid_comment, valid_conditional, valid_continue, valid_default, valid_datablock, valid_for, valid_function, valid_new, valid_operator, valid_package, valid_postfix, valid_return, valid_symbol, valid_switch, valid_switch_string, valid_while, variable_token
+from regex import chaining_token, closing_curly_bracket_token, closing_bracket_token, closing_parenthesis_token, colon_token, comma_token, digits, keywords, modulus_next_character_token, namespace_token, opening_curly_bracket_token, opening_bracket_token, opening_parenthesis_token, operator_token, operator_token_only_concatenation, operator_token_without_concatenation, parentheses_token, part_of_operator, template_literal_token, semicolon_token, space_token, string_token, valid_assignment, valid_break, valid_case, valid_comment, valid_conditional, valid_continue, valid_default, valid_datablock, valid_for, valid_function, valid_new, valid_operator, valid_package, valid_postfix, valid_return, valid_symbol, valid_switch, valid_switch_string, valid_while, variable_token
 from return_expression import ReturnExpression
 from string_literal import StringLiteral
 from symbol import Symbol
@@ -339,8 +339,12 @@ class Tokenizer:
 			for i in range(0, difference + 1):
 				self.file.give_character_back()
 			
-			# special case for namespaces
-			if self.file.read_character() == ":" and saved_operator == ":":
+			# special case for namespaces and modulus
+			next_char = self.file.read_character()
+			if (
+				(next_char == ":" and saved_operator == ":")
+				or (modulus_next_character_token.match(next_char) == None and saved_operator == "%")
+			):
 				self.file.give_character_back()
 				self.file.give_character_back()
 				self.operator_ban = (self.file.current_line_index, self.file.current_index + operator_ban_space)
