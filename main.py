@@ -1,6 +1,7 @@
 from config import set_config, get_config, add_exported_lines, add_read_file
 from file import File
 from tokenizer import Tokenizer
+from time import time
 from script_file import ScriptFile
 
 from pathlib import Path
@@ -92,10 +93,12 @@ if len(args) > 0:
 			set_config("verbose", True)
 		elif option == "--no-comments":
 			set_config("nocomments", True)
-	
+
 	# go through args and figure out what to do with them
 	for arg in args:
 		if os.path.exists(arg):
+			start = time()
+			
 			if os.path.isdir(arg):
 				scan_directory(arg, output_directory=get_config("output"), file_replacement=get_config("filereplace"))
 			else:
@@ -104,7 +107,8 @@ if len(args) > 0:
 			parsed_lines = get_config("parsedlines")
 			exported_lines = get_config("exportedlines")
 			number_of_files = get_config("readfiles")
-			print(f"Read {number_of_files} files, parsed {parsed_lines} lines, exported {exported_lines} lines")
+			time_taken = "{:.2f}".format(round(time() - start, 2))
+			print(f"Read {number_of_files} files, parsed {parsed_lines} lines and exported {exported_lines} lines in {time_taken} seconds")
 		else:
 			if "-" in arg:
 				print(f"Failed to read file or directory '{arg}' (are options before files and directories? eggscript [options] [files or directory])")
