@@ -1,7 +1,7 @@
 import re
 
 colon_token = re.compile(r':')
-comment_token = re.compile(r'\\/')
+comment_token = re.compile(r'\/')
 chaining_token = re.compile(r'\.')
 closing_curly_bracket_token = re.compile(r'}')
 closing_bracket_token = re.compile(r'\]')

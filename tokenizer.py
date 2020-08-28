@@ -54,6 +54,7 @@ class Tokenizer:
 	def read_comment(self):
 		self.file.give_character_back()
 		self.file.give_character_back()
+		self.file.give_character_back()
 		# read the rest of the line
 		comment = self.file.absorb_line()
 		return Comment(comment)
@@ -293,8 +294,6 @@ class Tokenizer:
 			self.file.give_character_back()
 			while self.file.read_character() == ":" and self.file.read_character() == ":":
 				self.tokenize(stop_ats=[], give_back_stop_ats=inheritable_give_back_stop_at + [semicolon_token, namespace_token, operator_token_without_concatenation, closing_parenthesis_token, closing_bracket_token, space_token], tree=namespace_expression, read_spaces=True)
-
-			self.file.give_character_back()
 			self.file.give_character_back()
 		except:
 			pass # if we hit an EOF, just ignore it
