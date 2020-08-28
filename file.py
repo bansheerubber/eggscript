@@ -48,3 +48,6 @@ class File:
 	
 	def give_character_back(self):
 		self.current_index = self.current_index - 1
+		if self.current_index < 0:
+			self.current_index = 0
+		return self.current_line[self.current_index]

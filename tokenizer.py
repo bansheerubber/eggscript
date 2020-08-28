@@ -52,9 +52,10 @@ class Tokenizer:
 			self.buffer = ""
 	
 	def read_comment(self):
+		while self.file.give_character_back() != "/":
+			pass
 		self.file.give_character_back()
-		self.file.give_character_back()
-		self.file.give_character_back()
+			
 		# read the rest of the line
 		comment = self.file.absorb_line()
 		return Comment(comment)
@@ -203,6 +204,7 @@ class Tokenizer:
 			if buffer != "else if":
 				self.file.give_character_back()
 				self.file.give_character_back()
+				self.file.give_character_back()
 				buffer = "else"
 		
 		expression.type = buffer
@@ -212,7 +214,7 @@ class Tokenizer:
 			self.tokenize(stop_ats=[closing_parenthesis_token], tree=expression)
 			expression.move_expressions()
 
-		self.file.read_character() # absorb first "{"
+		self.file.read_character()
 		self.tokenize(stop_ats=[closing_curly_bracket_token], tree=expression)
 
 		return expression
