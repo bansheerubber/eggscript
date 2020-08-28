@@ -43,12 +43,13 @@ class NewObjectExpression(Expression):
 		for argument_expression in self.argument_expressions:
 			output = output + argument_expression.to_script()
 
-		full_output = full_output + "(" + output + ")" + space + "{" + newline
+		full_output = full_output + "(" + output + ")"
 		
-		output = ""
-		for expression in self.expressions:
-			output = output + (tab * self.get_indent_level()) + expression.to_script() + newline
-		
-		full_output = full_output + output + (tab * (self.get_indent_level() - 1)) + "}" + self.handle_semicolon()
+		if len(self.expressions) > 0:
+			output = ""
+			for expression in self.expressions:
+				output = output + (tab * self.get_indent_level()) + expression.to_script() + newline
+			
+			full_output = full_output + space + "{" + newline + output + (tab * (self.get_indent_level() - 1)) + "}"
 
-		return full_output
+		return full_output + self.handle_semicolon()

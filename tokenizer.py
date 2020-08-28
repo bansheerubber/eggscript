@@ -2,6 +2,8 @@ import sys
 sys.path.insert(0, "./expressions")
 sys.path.insert(0, "./misc")
 
+from config import get_config
+
 from array_access_expression import ArrayAccessExpression
 from break_expression import BreakExpression
 from case_expression import CaseExpression
@@ -25,7 +27,7 @@ from parentheses_expression import ParenthesesExpression
 from postfix_expression import PostfixExpression
 from template_literal_expression import TemplateLiteralExpression
 from tokenizer_exception import TokenizerException
-from regex import chaining_token, closing_curly_bracket_token, closing_bracket_token, closing_parenthesis_token, colon_token, comma_token, digits, keywords, namespace_token, opening_curly_bracket_token, opening_bracket_token, opening_parenthesis_token, operator_token, operator_token_only_concatenation, operator_token_without_concatenation, parentheses_token, template_literal_token, semicolon_token, space_token, string_token, valid_assignment, valid_break, valid_case, valid_comment, valid_conditional, valid_continue, valid_default, valid_datablock, valid_for, valid_function, valid_new, valid_operator, valid_package, valid_postfix, valid_return, valid_symbol, valid_switch, valid_switch_string, valid_while, variable_token
+from regex import chaining_token, closing_curly_bracket_token, closing_bracket_token, closing_parenthesis_token, colon_token, comma_token, digits, keywords, namespace_token, opening_curly_bracket_token, opening_bracket_token, opening_parenthesis_token, operator_token, operator_token_only_concatenation, operator_token_without_concatenation, parentheses_token, part_of_operator, template_literal_token, semicolon_token, space_token, string_token, valid_assignment, valid_break, valid_case, valid_comment, valid_conditional, valid_continue, valid_default, valid_datablock, valid_for, valid_function, valid_new, valid_operator, valid_package, valid_postfix, valid_return, valid_symbol, valid_switch, valid_switch_string, valid_while, variable_token
 from return_expression import ReturnExpression
 from string_literal import StringLiteral
 from symbol import Symbol
@@ -48,8 +50,6 @@ class Tokenizer:
 		elif valid_symbol.match(self.buffer):
 			self.add_expression(tree, self.get_symbol(self.buffer))
 			self.buffer = ""
-		else:
-			print("didn't absorb buffer", self.buffer)
 	
 	def read_comment(self):
 		self.file.give_character_back()
@@ -146,8 +146,11 @@ class Tokenizer:
 		self.tokenize(stop_ats=[closing_parenthesis_token], tree=expression)
 		expression.convert_expressions_to_arguments()
 
-		self.file.read_character() # absorb first "{"
-		self.tokenize(stop_ats=[closing_curly_bracket_token], tree=expression)
+		char = self.file.read_character() # absorb first "{"
+		if opening_curly_bracket_token.match(char):
+			self.tokenize(stop_ats=[closing_curly_bracket_token], tree=expression)
+		else:
+			self.file.give_character_back()
 
 		return expression
 	
@@ -290,7 +293,9 @@ class Tokenizer:
 			self.file.give_character_back()
 			while self.file.read_character() == ":" and self.file.read_character() == ":":
 				self.tokenize(stop_ats=[], give_back_stop_ats=inheritable_give_back_stop_at + [semicolon_token, namespace_token, operator_token_without_concatenation, closing_parenthesis_token, closing_bracket_token, space_token], tree=namespace_expression, read_spaces=True)
-				self.file.give_character_back()
+
+			self.file.give_character_back()
+			self.file.give_character_back()
 		except:
 			pass # if we hit an EOF, just ignore it
 			
@@ -314,32 +319,42 @@ class Tokenizer:
 	def read_operator(self):
 		self.file.give_character_back()
 		buffer = ""
-		first_potential_match = None
-		has_match = False
 		operator_ban_space = 0
-		for i in range(0, 5):
-			buffer = buffer + self.file.read_character(ignore_whitespace=False)
-			match = valid_operator.match(buffer)
-			if match != None:
-				has_match = True
-				operator_ban_space = i
-			elif match == None and has_match and operator_token.match(buffer[-1]) == None and valid_operator.match(buffer[0:-1]):
-				self.file.give_character_back()
-				match = valid_operator.match(buffer[0:-1])
-				return OperatorExpression(match.group(0))
-			elif match == None and has_match and operator_token.match(buffer[-1]) != None and first_potential_match == None:
-				first_potential_match = buffer[0:-1]
-		
-		# weird bug means the syntax absolute hates "if(!$GlobalVariable) {...}". this behavior isn't present in any other syntax combinations, so i don't want to try to make something generalized and potentially break even more stuff down the line
-		if first_potential_match == "!":
-			for i in range(0, 5 - len(first_potential_match)):
-				self.file.give_character_back()
-			return OperatorExpression(first_potential_match)
+		saved_operator = None
+		index = 0
+		while True:
+			char = self.file.read_character(ignore_whitespace=False)
+			if operator_token.match(char) or part_of_operator.match(char):
+				buffer = buffer + char
+			else:
+				operator_ban_space = index
+				break
+			
+			if valid_operator.match(buffer):
+				saved_operator = buffer
+			
+			index = index + 1
 
-		for i in range(0, 5):
-			self.file.give_character_back()
-		self.operator_ban = (self.file.current_line_index, self.file.current_index + operator_ban_space + 1)
-		return None
+		if saved_operator != None:
+			difference = len(buffer) - len(saved_operator)
+			for i in range(0, difference + 1):
+				self.file.give_character_back()
+			
+			# special case for namespaces
+			if self.file.read_character() == ":" and saved_operator == ":":
+				self.file.give_character_back()
+				self.file.give_character_back()
+				self.operator_ban = (self.file.current_line_index, self.file.current_index + operator_ban_space)
+				return None
+			else:
+				self.file.give_character_back()
+			
+			return OperatorExpression(saved_operator)
+		else:
+			for i in range(0, operator_ban_space + 1):
+				self.file.give_character_back()
+			self.operator_ban = (self.file.current_line_index, self.file.current_index + operator_ban_space)
+			return None
 	
 	def get_symbol(self, symbol_name):
 		if variable_token.match(symbol_name[0]):
@@ -435,13 +450,9 @@ class Tokenizer:
 					self.buffer = ""
 				
 				continue
-
+		
 			if (
 				operator_token.match(char)
-				and (
-					operator_token_only_concatenation.match(char) == None
-					or self.file.skipped_space == True
-				)
 				and (
 					self.file.current_line_index > self.operator_ban[0]
 					or self.file.current_index > self.operator_ban[1]
@@ -461,7 +472,9 @@ class Tokenizer:
 					if operator != None:
 						self.absorb_buffer(tree)
 						if valid_comment.match(operator.operator):
-							self.add_expression(tree, self.read_comment())
+							comment = self.read_comment()
+							if get_config("nocomments") != True:
+								self.add_expression(tree, comment)
 						elif valid_assignment.match(operator.operator):
 							# take last expression and use that as left hand for variable assignment
 							last_expression = tree.expressions.pop()
