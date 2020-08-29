@@ -9,6 +9,8 @@ class NewObjectExpression(Expression):
 		self.class_expressions = None
 		self.argument_expressions = []
 		self.is_code_block = True
+		self.has_arguments = True
+		self.no_keywords_in_code_block = True
 	
 	def convert_expressions_to_class(self):
 		self.class_expressions = self.expressions

@@ -9,6 +9,7 @@ class ArrayAccessExpression(Expression):
 		self.symbol = symbol
 		self.argument_expressions = []
 		self.parent = None
+		self.has_arguments = True
 	
 	def convert_expressions_to_arguments(self):
 		if len(self.expressions) > 0:

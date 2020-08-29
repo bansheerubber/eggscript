@@ -245,7 +245,7 @@ class Tokenizer:
 						regex.valid_symbol.match(self.buffer + char) == None
 						or self.file.skipped_space
 					)
-					and type(tree) is not NewObjectExpression
+					and tree.no_keywords_in_code_block == False
 				):
 					for keyword_regex, expression_class in keyword_regexes.items():
 						if keyword_regex.match(self.buffer):
@@ -263,12 +263,7 @@ class Tokenizer:
 					)
 				): # handle operators
 					if regex.comma_token.match(char): # handle commas in special case
-						if (
-							type(tree) is MethodExpression
-							or type(tree) is FunctionExpression
-							or type(tree) is ArrayAccessExpression
-							or type(tree) is NewObjectExpression
-						):
+						if tree.has_arguments:
 							self.absorb_buffer(tree)
 							tree.convert_expressions_to_arguments()
 					else:

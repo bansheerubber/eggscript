@@ -9,6 +9,7 @@ class DatablockExpression(Expression):
 		self.class_symbol = None
 		self.name_symbol = None
 		self.is_code_block = True
+		self.no_keywords_in_code_block = True
 	
 	def convert_expression_to_class(self):
 		self.class_symbol = self.expressions[0]

@@ -10,6 +10,8 @@ class Expression:
 		self.is_code_block = False
 		self.parent = None
 		self.is_chainable = False
+		self.has_arguments = False
+		self.no_keywords_in_code_block = False
 	
 	def handle_semicolon(self):
 		if self.parent != None and self.parent.is_code_block and self in self.parent.expressions:

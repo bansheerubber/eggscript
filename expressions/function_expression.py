@@ -11,6 +11,7 @@ class FunctionExpression(Expression):
 		self.argument_expressions = []
 		self.parent = None
 		self.is_code_block = True
+		self.has_arguments = True
 	
 	def convert_expression_to_name(self):
 		self.name_symbol = self.expressions[0]
