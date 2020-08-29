@@ -276,7 +276,7 @@ class Tokenizer:
 	
 	def read_chaining_expression(self, tree, inheritable_give_back_stop_at):
 		first_expression = None
-		if len(tree.expressions) > 0 and hasattr(tree.expressions[-1], "is_chainable"):
+		if len(tree.expressions) > 0 and tree.expressions[-1].is_chainable:
 			first_expression = tree.expressions.pop()
 		else:
 			first_expression = self.get_symbol(self.buffer)
@@ -503,7 +503,7 @@ class Tokenizer:
 					and regex.valid_symbol.match(self.buffer)
 					or (
 						len(tree.expressions) > 0
-						and hasattr(tree.expressions[-1], "is_chainable")
+						and tree.expressions[-1].is_chainable
 						and regex.valid_symbol.match(self.buffer) == None
 					)
 				): # handle chaining (%test.test.test.test...)

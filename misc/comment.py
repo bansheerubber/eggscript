@@ -1,7 +1,9 @@
 from config import get_config
+from expression import Expression
 
-class Comment:
+class Comment(Expression):
 	def __init__(self, comment):
+		super().__init__()
 		self.comment = comment
 		self.parent = None
 	
@@ -12,7 +14,7 @@ class Comment:
 		return self.__str__()
 	
 	def to_script(self):
-		if get_config("nocomments") != True and hasattr(self.parent, "code_block") == False:
+		if get_config("nocomments") != True and self.parent.is_code_block == False:
 			return self.comment + "\n"
 		else:
 			return self.comment

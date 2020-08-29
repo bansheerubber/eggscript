@@ -7,7 +7,7 @@ class NewObjectExpression(Expression):
 		super().__init__()
 		self.class_expressions = None
 		self.argument_expressions = []
-		self.code_block = True
+		self.is_code_block = True
 	
 	def convert_expressions_to_class(self):
 		self.class_expressions = self.expressions

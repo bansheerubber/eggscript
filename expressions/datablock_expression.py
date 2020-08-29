@@ -6,7 +6,7 @@ class DatablockExpression(Expression):
 		super().__init__()
 		self.class_symbol = None
 		self.name_symbol = None
-		self.code_block = True
+		self.is_code_block = True
 	
 	def convert_expression_to_class(self):
 		self.class_symbol = self.expressions[0]

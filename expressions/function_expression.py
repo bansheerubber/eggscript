@@ -9,7 +9,7 @@ class FunctionExpression(Expression):
 		self.name_symbol = None
 		self.argument_expressions = []
 		self.parent = None
-		self.code_block = True
+		self.is_code_block = True
 	
 	def convert_expression_to_name(self):
 		self.name_symbol = self.expressions[0]

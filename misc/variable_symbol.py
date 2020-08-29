@@ -1,5 +1,8 @@
-class VariableSymbol:
+from expression import Expression
+
+class VariableSymbol(Expression):
 	def __init__(self, name):
+		super().__init__()
 		self.name = name
 		self.parent = None
 	

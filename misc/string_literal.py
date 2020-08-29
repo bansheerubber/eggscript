@@ -1,5 +1,8 @@
-class StringLiteral:
+from expression import Expression
+
+class StringLiteral(Expression):
 	def __init__(self, value, delimiter):
+		super().__init__()
 		self.value = value
 		self.delimiter = delimiter
 		self.parent = None

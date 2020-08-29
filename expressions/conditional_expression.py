@@ -5,7 +5,7 @@ class ConditionalExpression(Expression):
 	def __init__(self):
 		super().__init__()
 		self.conditional_expressions = []
-		self.code_block = True
+		self.is_code_block = True
 		self.type = ""
 	
 	def __str__(self):

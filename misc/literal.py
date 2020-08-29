@@ -1,7 +1,9 @@
 from regex import digits
+from expression import Expression
 
-class Literal:
+class Literal(Expression):
 	def __init__(self, value):
+		super().__init__()
 		self.value = value
 		self.parent = None
 	

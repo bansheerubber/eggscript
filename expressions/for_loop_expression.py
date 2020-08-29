@@ -7,7 +7,7 @@ class ForLoopExpression(Expression):
 		self.initiation_expressions = []
 		self.conditional_expressions = []
 		self.increment_expressions = []
-		self.code_block = True
+		self.is_code_block = True
 	
 	def __str__(self):
 		return f"ForLoopExpression({self.initiation_expressions}, {self.conditional_expressions}, {self.increment_expressions}, {self.expressions})"

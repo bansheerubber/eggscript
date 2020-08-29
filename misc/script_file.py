@@ -1,11 +1,13 @@
 from config import get_config
+from expression import Expression
 
-class ScriptFile:
+class ScriptFile(Expression):
 	def __init__(self, filename):
+		super().__init__()
 		self.expressions = []
 		self.filename = filename
 		self.parent = None
-		self.code_block = True
+		self.is_code_block = True
 	
 	def __str__(self):
 		return f"ScriptFile({self.filename})"
