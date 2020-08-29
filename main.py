@@ -75,7 +75,7 @@ optionlist, args = getopt.getopt(sys.argv[1:], "hmcvo:f:", ["help", "minify", "n
 if len(args) > 0:
 	set_config("output", "./")
 	set_config("filereplace", "{}.cs")
-	set_config("includecs", "{}.cs")
+	set_config("includecs", False)
 	
 	for option, argument in optionlist:
 		if option == "-h" or option == "--help":
