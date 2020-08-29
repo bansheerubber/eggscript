@@ -1,3 +1,5 @@
+keyword_regexes = {}
+
 class Expression:
 	def __init__(self, expressions=None):
 		if expressions == None:
@@ -23,3 +25,9 @@ class Expression:
 				level = level + 1
 			parent = parent.parent
 		return level
+	
+	def add_keyword_regex(regex, expression_class):
+		keyword_regexes[regex] = expression_class
+	
+	def read_expression(self):
+		print("Unimplemented read_expression()")

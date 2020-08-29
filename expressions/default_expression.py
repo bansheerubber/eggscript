@@ -1,5 +1,6 @@
 from config import get_config
 from expression import Expression
+from regex import closing_curly_bracket_token, valid_case, valid_default
 
 class DefaultExpression(Expression):
 	def __init__(self):
@@ -30,3 +31,12 @@ class DefaultExpression(Expression):
 		full_output = full_output + output
 	
 		return full_output
+	
+	def read_expression(tokenizer):
+		expression = DefaultExpression()
+		# read up until next case, next default, or }
+		tokenizer.tokenize(give_back_stop_ats=[closing_curly_bracket_token], buffer_give_back_stop_at=[valid_case, valid_default], tree=expression)
+
+		return expression
+
+Expression.add_keyword_regex(valid_default, DefaultExpression)

@@ -1,6 +1,7 @@
 from argument_expression import ArgumentExpression
 from config import get_config
 from expression import Expression
+from regex import closing_curly_bracket_token, closing_parenthesis_token, opening_curly_bracket_token, opening_parenthesis_token, valid_new
 
 class NewObjectExpression(Expression):
 	def __init__(self):
@@ -53,3 +54,23 @@ class NewObjectExpression(Expression):
 			full_output = full_output + space + "{" + newline + output + (tab * (self.get_indent_level() - 1)) + "}"
 
 		return full_output + self.handle_semicolon()
+	
+	def read_expression(tokenizer):
+		expression = NewObjectExpression()
+		tokenizer.file.give_character_back()
+
+		tokenizer.tokenize(stop_ats=[opening_parenthesis_token], tree=expression)
+		expression.convert_expressions_to_class()
+
+		tokenizer.tokenize(stop_ats=[closing_parenthesis_token], tree=expression)
+		expression.convert_expressions_to_arguments()
+
+		char = tokenizer.file.read_character() # absorb first "{"
+		if opening_curly_bracket_token.match(char):
+			tokenizer.tokenize(stop_ats=[closing_curly_bracket_token], tree=expression)
+		else:
+			tokenizer.file.give_character_back()
+
+		return expression
+
+Expression.add_keyword_regex(valid_new, NewObjectExpression)

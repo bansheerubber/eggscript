@@ -1,6 +1,7 @@
 from config import get_config
 from argument_expression import ArgumentExpression
 from expression import Expression
+from regex import closing_curly_bracket_token, closing_parenthesis_token, opening_parenthesis_token, valid_function
 import re
 
 class FunctionExpression(Expression):
@@ -50,3 +51,20 @@ class FunctionExpression(Expression):
 		full_output = full_output + output + (tab * (self.get_indent_level() - 1)) + "}"
 
 		return full_output
+	
+	def read_expression(tokenizer):
+		expression = FunctionExpression()
+
+		tokenizer.file.give_character_back()
+		tokenizer.tokenize(stop_ats=[opening_parenthesis_token], inheritable_give_back_stop_at=[opening_parenthesis_token], tree=expression)
+		expression.convert_expression_to_name()
+
+		tokenizer.tokenize(stop_ats=[closing_parenthesis_token], tree=expression)
+		expression.convert_expressions_to_arguments()
+
+		tokenizer.file.read_character() # absorb first "{"
+		tokenizer.tokenize(stop_ats=[closing_curly_bracket_token], tree=expression)
+
+		return expression
+
+Expression.add_keyword_regex(valid_function, FunctionExpression)

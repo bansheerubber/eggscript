@@ -1,5 +1,6 @@
 from config import get_config
 from expression import Expression
+from regex import closing_curly_bracket_token, closing_parenthesis_token, semicolon_token, valid_for
 
 class ForLoopExpression(Expression):
 	def __init__(self):
@@ -60,3 +61,22 @@ class ForLoopExpression(Expression):
 		full_output = full_output + output + (tab * (self.get_indent_level() - 1)) + "}"
 
 		return full_output
+	
+	def read_expression(tokenizer):
+		expression = ForLoopExpression()
+		
+		tokenizer.tokenize(stop_ats=[semicolon_token], tree=expression)
+		expression.move_initiation_expressions()
+
+		tokenizer.tokenize(stop_ats=[semicolon_token], tree=expression)
+		expression.move_conditional_expressions()
+
+		tokenizer.tokenize(stop_ats=[closing_parenthesis_token], tree=expression)
+		expression.move_increment_expressions()
+
+		tokenizer.file.read_character() # absorb first "{"
+		tokenizer.tokenize(stop_ats=[closing_curly_bracket_token], tree=expression)
+
+		return expression
+
+Expression.add_keyword_regex(valid_for, ForLoopExpression)

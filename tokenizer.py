@@ -5,6 +5,8 @@ sys.path.insert(0, "./misc")
 from config import get_config
 import traceback
 
+from expression import keyword_regexes
+
 from array_access_expression import ArrayAccessExpression
 from break_expression import BreakExpression
 from case_expression import CaseExpression
@@ -60,162 +62,6 @@ class Tokenizer:
 		# read the rest of the line
 		comment = self.file.absorb_line()
 		return Comment(comment)
-	
-	def read_for_loop(self):
-		expression = ForLoopExpression()
-		
-		self.tokenize(stop_ats=[regex.semicolon_token], tree=expression)
-		expression.move_initiation_expressions()
-
-		self.tokenize(stop_ats=[regex.semicolon_token], tree=expression)
-		expression.move_conditional_expressions()
-
-		self.tokenize(stop_ats=[regex.closing_parenthesis_token], tree=expression)
-		expression.move_increment_expressions()
-
-		self.file.read_character() # absorb first "{"
-		self.tokenize(stop_ats=[regex.closing_curly_bracket_token], tree=expression)
-
-		return expression
-	
-	def read_while_loop(self):
-		expression = WhileLoopExpression()
-		
-		self.tokenize(stop_ats=[regex.closing_parenthesis_token], tree=expression)
-		expression.convert_expressions_to_conditionals()
-
-		self.file.read_character() # absorb first "{"
-		self.tokenize(stop_ats=[regex.closing_curly_bracket_token], tree=expression)
-
-		return expression
-	
-	def read_default(self):
-		expression = DefaultExpression()
-		# read up until next case, next default, or }
-		self.tokenize(give_back_stop_ats=[regex.closing_curly_bracket_token], buffer_give_back_stop_at=[regex.valid_case, regex.valid_default], tree=expression)
-
-		return expression
-	
-	def read_case(self):
-		expression = CaseExpression()
-		self.file.give_character_back()
-		self.tokenize(stop_ats=[regex.colon_token], tree=expression)
-		expression.convert_expressions_to_conditionals()
-
-		# read up until next case, next default, or }
-		self.tokenize(give_back_stop_ats=[regex.closing_curly_bracket_token], buffer_give_back_stop_at=[regex.valid_case, regex.valid_default], tree=expression)
-
-		return expression
-	
-	def read_switch(self):
-		self.file.give_character_back()
-		self.file.give_character_back()
-		char = self.file.read_character()
-		switch_type = "switch"
-		if char == "$":
-			switch_type = "switch$"
-		self.file.read_character()
-		
-		expression = SwitchExpression(switch_type)
-		
-		self.tokenize(stop_ats=[regex.closing_parenthesis_token], tree=expression)
-		expression.convert_expressions_to_conditionals()
-
-		self.file.read_character() # absorb first "{"
-		self.tokenize(stop_ats=[regex.closing_curly_bracket_token], tree=expression)
-
-		return expression
-	
-	def read_package(self):
-		expression = PackageExpression()
-
-		self.file.give_character_back()
-
-		self.tokenize(stop_ats=[regex.opening_curly_bracket_token], tree=expression)
-		expression.convert_expression_to_name()
-
-		self.tokenize(stop_ats=[regex.closing_curly_bracket_token], tree=expression)
-
-		return expression
-	
-	def read_new(self):
-		expression = NewObjectExpression()
-		self.file.give_character_back()
-
-		self.tokenize(stop_ats=[regex.opening_parenthesis_token], tree=expression)
-		expression.convert_expressions_to_class()
-
-		self.tokenize(stop_ats=[regex.closing_parenthesis_token], tree=expression)
-		expression.convert_expressions_to_arguments()
-
-		char = self.file.read_character() # absorb first "{"
-		if regex.opening_curly_bracket_token.match(char):
-			self.tokenize(stop_ats=[regex.closing_curly_bracket_token], tree=expression)
-		else:
-			self.file.give_character_back()
-
-		return expression
-	
-	def read_datablock(self):
-		expression = DatablockExpression()
-		self.file.give_character_back()
-
-		self.tokenize(stop_ats=[regex.opening_parenthesis_token], tree=expression)
-		expression.convert_expression_to_class()
-
-		self.tokenize(stop_ats=[regex.closing_parenthesis_token], give_back_stop_ats=[regex.colon_token], tree=expression)
-
-		if self.file.read_character() == ":":
-			inheritance_expression = InheritanceExpression()
-			inheritance_expression.child_class = expression.expressions[0]
-			self.tokenize(stop_ats=[regex.closing_parenthesis_token], tree=inheritance_expression)
-			inheritance_expression.convert_expression_to_super_class()
-
-			expression.convert_expression_to_name(expression=inheritance_expression)
-		else:
-			expression.convert_expression_to_name()
-			self.file.give_character_back()
-
-		self.file.read_character() # absorb first "{"
-		self.tokenize(stop_ats=[regex.closing_curly_bracket_token], tree=expression)
-
-		return expression
-	
-	def read_function(self):
-		expression = FunctionExpression()
-
-		self.file.give_character_back()
-		self.tokenize(stop_ats=[regex.opening_parenthesis_token], inheritable_give_back_stop_at=[regex.opening_parenthesis_token], tree=expression)
-		expression.convert_expression_to_name()
-
-		self.tokenize(stop_ats=[regex.closing_parenthesis_token], tree=expression)
-		expression.convert_expressions_to_arguments()
-
-		self.file.read_character() # absorb first "{"
-		self.tokenize(stop_ats=[regex.closing_curly_bracket_token], tree=expression)
-
-		return expression
-	
-	def read_conditional(self, buffer):
-		expression = ConditionalExpression()
-		self.file.give_character_back()
-		if buffer == "else":
-			buffer = buffer + " " + self.file.read_character() + self.file.read_character()
-			if buffer != "else if":
-				self.file.give_characters_back("e")
-				buffer = "else"
-		
-		expression.type = buffer
-
-		if buffer != "else":
-			self.file.read_character() # absorb first "("
-			self.tokenize(stop_ats=[regex.closing_parenthesis_token], tree=expression)
-			expression.move_expressions()
-		
-		self.file.read_character() # absorb first "{"
-		self.tokenize(stop_ats=[regex.closing_curly_bracket_token], tree=expression)
-
-		return expression
 
 	def read_variable_assignment(self, operator, left_hand, stop_ats):
 		# keep reading until we absorb the full value (ended by semicolon)
@@ -306,21 +152,6 @@ class Tokenizer:
 			pass # if we hit an EOF, just ignore it
 			
 		return namespace_expression
-	
-	def read_return(self):
-		expression = ReturnExpression()
-		
-		self.file.give_character_back()
-		self.tokenize(give_back_stop_ats=[regex.semicolon_token], tree=expression)
-		return expression
-	
-	def read_break(self):
-		self.file.give_character_back()
-		return BreakExpression()
-	
-	def read_continue(self):
-		self.file.give_character_back()
-		return ContinueExpression()
 	
 	def read_operator(self):
 		self.file.give_character_back()
@@ -416,48 +247,11 @@ class Tokenizer:
 					)
 					and type(tree) is not NewObjectExpression
 				):
-					if regex.valid_conditional.match(self.buffer): # handle conditionals
-						self.add_expression(tree, self.read_conditional(self.buffer))
-						self.buffer = ""
-					elif regex.valid_for.match(self.buffer): # handle for loops
-						self.add_expression(tree, self.read_for_loop())
-						self.buffer = ""
-					elif regex.valid_while.match(self.buffer): # handle while loops
-						self.add_expression(tree, self.read_while_loop())
-						self.buffer = ""
-					elif regex.valid_function.match(self.buffer): # handle functions
-						self.add_expression(tree, self.read_function())
-						self.buffer = ""
-					elif regex.valid_switch.match(self.buffer): # handle switch statements
-						self.add_expression(tree, self.read_switch())
-						self.buffer = ""
-					elif regex.valid_switch_string.match(self.buffer): # handle switch string statements
-						self.add_expression(tree, self.read_switch())
-						self.buffer = ""
-					elif regex.valid_case.match(self.buffer): # handle case statements
-						self.add_expression(tree, self.read_case())
-						self.buffer = ""
-					elif regex.valid_default.match(self.buffer): # handle default statement
-						self.add_expression(tree, self.read_default())
-						self.buffer = ""
-					elif regex.valid_package.match(self.buffer): # handle packages
-						self.add_expression(tree, self.read_package())
-						self.buffer = ""
-					elif regex.valid_return.match(self.buffer): # handle returns
-						self.add_expression(tree, self.read_return())
-						self.buffer = ""
-					elif regex.valid_continue.match(self.buffer): # handle continues
-						self.add_expression(tree, self.read_continue())
-						self.buffer = ""
-					elif regex.valid_break.match(self.buffer): # handle breaks
-						self.add_expression(tree, self.read_break())
-						self.buffer = ""
-					elif regex.valid_datablock.match(self.buffer): # handle datablocks
-						self.add_expression(tree, self.read_datablock())
-						self.buffer = ""
-					elif regex.valid_new.match(self.buffer): # handle object creation
-						self.add_expression(tree, self.read_new())
-						self.buffer = ""
+					for keyword_regex, expression_class in keyword_regexes.items():
+						if keyword_regex.match(self.buffer):
+							self.add_expression(tree, expression_class.read_expression(self))
+							self.buffer = ""
+							break
 					
 					continue
 			

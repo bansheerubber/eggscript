@@ -1,4 +1,5 @@
 from expression import Expression
+from regex import valid_continue
 
 class ContinueExpression(Expression):
 	def __init__(self):
@@ -12,3 +13,9 @@ class ContinueExpression(Expression):
 	
 	def to_script(self):
 		return f"continue{self.handle_semicolon()}"
+	
+	def read_expression(tokenizer):
+		tokenizer.file.give_character_back()
+		return ContinueExpression()
+
+Expression.add_keyword_regex(valid_continue, ContinueExpression)

@@ -1,4 +1,5 @@
 from expression import Expression
+from regex import semicolon_token, valid_return
 
 class ReturnExpression(Expression):
 	def __init__(self):
@@ -19,3 +20,12 @@ class ReturnExpression(Expression):
 			output = ""
 
 		return f"return{output}{self.handle_semicolon()}"
+	
+	def read_expression(tokenizer):
+		expression = ReturnExpression()
+		
+		tokenizer.file.give_character_back()
+		tokenizer.tokenize(give_back_stop_ats=[semicolon_token], tree=expression)
+		return expression
+
+Expression.add_keyword_regex(valid_return, ReturnExpression)
