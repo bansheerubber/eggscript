@@ -61,12 +61,22 @@ class File:
 		else:
 			return char
 	
-	def give_character_back(self):
+	def give_character_back(self, ignore_whitespace=False):
 		self.current_index = self.current_index - 1
 		if self.current_index < 0:
 			self.current_line_index = self.current_line_index - 1 # step back one line
 			self.current_line = self.lines[self.current_line_index]
 			self.current_index = len(self.current_line) - 1
+		char = self.current_line[self.current_index]
+
+		while whitespace.match(char) != None and ignore_whitespace:
+			self.current_index = self.current_index - 1
+			if self.current_index < 0:
+				self.current_line_index = self.current_line_index - 1 # step back one line
+				self.current_line = self.lines[self.current_line_index]
+				self.current_index = len(self.current_line) - 1
+			char = self.current_line[self.current_index]
+
 		return self.current_line[self.current_index]
 	
 	def give_characters_back(self, until):

@@ -219,6 +219,24 @@ class Tokenizer:
 			except:
 				break
 			
+			# handle keyword matching (function, for, if, etc)
+			if(
+				regex.keywords.match(self.buffer)
+				and regex.keywords.match(self.buffer + char) == None
+				and (
+					regex.valid_symbol.match(self.buffer + char) == None
+					or self.file.skipped_space
+				)
+				and tree.no_keywords_in_code_block == False
+			):
+				for keyword_regex, expression_class in keyword_regexes.items():
+					if keyword_regex.match(self.buffer):
+						self.add_expression(tree, expression_class.read_expression(self, tree))
+						self.buffer = ""
+						break
+				
+				continue
+
 			try:
 				for stop_at in buffer_give_back_stop_at:
 					if stop_at.match(self.buffer):
@@ -236,24 +254,6 @@ class Tokenizer:
 					if stop_at.match(char):
 						self.absorb_buffer(tree)
 						return tree
-				
-				# handle keyword matching (function, for, if, etc)
-				if(
-					regex.keywords.match(self.buffer)
-					and regex.keywords.match(self.buffer + char) == None
-					and (
-						regex.valid_symbol.match(self.buffer + char) == None
-						or self.file.skipped_space
-					)
-					and tree.no_keywords_in_code_block == False
-				):
-					for keyword_regex, expression_class in keyword_regexes.items():
-						if keyword_regex.match(self.buffer):
-							self.add_expression(tree, expression_class.read_expression(self, tree))
-							self.buffer = ""
-							break
-					
-					continue
 			
 				if (
 					regex.operator_token.match(char)
@@ -288,7 +288,8 @@ class Tokenizer:
 								self.add_expression(tree, new_expression)
 							else:
 								self.add_expression(tree, operator)
-				elif (regex.chaining_token.match(char)
+				elif (
+					regex.chaining_token.match(char)
 					and regex.valid_symbol.match(self.buffer)
 					or (
 						len(tree.expressions) > 0

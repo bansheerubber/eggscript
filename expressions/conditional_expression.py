@@ -1,6 +1,6 @@
 from config import get_config
 from expression import Expression
-from regex import closing_curly_bracket_token, closing_parenthesis_token, opening_curly_bracket_token, valid_conditional
+from regex import closing_curly_bracket_token, closing_parenthesis_token, opening_curly_bracket_token, semicolon_token, valid_conditional
 
 class ConditionalExpression(Expression):
 	def __init__(self):
@@ -53,7 +53,9 @@ class ConditionalExpression(Expression):
 		if tokenizer.buffer == "else":
 			tokenizer.buffer = tokenizer.buffer + " " + tokenizer.file.read_character() + tokenizer.file.read_character()
 			if tokenizer.buffer != "else if":
-				tokenizer.file.give_characters_back("e")
+				tokenizer.file.give_character_back(ignore_whitespace=True)
+				tokenizer.file.give_character_back(ignore_whitespace=True)
+
 				tokenizer.buffer = "else"
 		
 		expression.type = tokenizer.buffer
@@ -62,9 +64,12 @@ class ConditionalExpression(Expression):
 			tokenizer.file.read_character() # absorb first "("
 			tokenizer.tokenize(stop_ats=[closing_parenthesis_token], tree=expression)
 			expression.move_expressions()
-		
-		tokenizer.tokenize(stop_ats=[opening_curly_bracket_token], tree=expression)
-		tokenizer.tokenize(stop_ats=[closing_curly_bracket_token], tree=expression)
+
+		tokenizer.tokenize(give_back_stop_ats=[opening_curly_bracket_token, semicolon_token], tree=expression)
+
+		# figure out if this is a single line if-statement or not
+		if tokenizer.file.read_character() == "{":
+			tokenizer.tokenize(stop_ats=[closing_curly_bracket_token], tree=expression)
 
 		return expression
 

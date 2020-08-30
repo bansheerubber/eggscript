@@ -1,7 +1,7 @@
 from argument_expression import ArgumentExpression
 from config import get_config
 from expression import Expression
-from regex import closing_curly_bracket_token, closing_parenthesis_token, opening_curly_bracket_token, opening_parenthesis_token, valid_new
+from regex import closing_curly_bracket_token, closing_parenthesis_token, opening_curly_bracket_token, opening_parenthesis_token, semicolon_token,valid_new
 
 class NewObjectExpression(Expression):
 	def __init__(self):
@@ -67,7 +67,7 @@ class NewObjectExpression(Expression):
 		tokenizer.tokenize(stop_ats=[closing_parenthesis_token], tree=expression)
 		expression.convert_expressions_to_arguments()
 
-		tokenizer.tokenize(give_back_stop_ats=[opening_curly_bracket_token], tree=expression)
+		tokenizer.tokenize(give_back_stop_ats=[opening_curly_bracket_token, semicolon_token], tree=expression)
 		char = tokenizer.file.read_character() # absorb first "{"
 		if opening_curly_bracket_token.match(char):
 			tokenizer.tokenize(stop_ats=[closing_curly_bracket_token], tree=expression)

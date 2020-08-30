@@ -74,8 +74,11 @@ class ForLoopExpression(Expression):
 		tokenizer.tokenize(stop_ats=[closing_parenthesis_token], tree=expression)
 		expression.move_increment_expressions()
 
-		tokenizer.tokenize(stop_ats=[opening_curly_bracket_token], tree=expression)
-		tokenizer.tokenize(stop_ats=[closing_curly_bracket_token], tree=expression)
+		tokenizer.tokenize(give_back_stop_ats=[opening_curly_bracket_token, semicolon_token], tree=expression)
+
+		# figure out if this is a single line if-statement or not
+		if tokenizer.file.read_character() == "{":
+			tokenizer.tokenize(stop_ats=[closing_curly_bracket_token], tree=expression)
 
 		return expression
 
