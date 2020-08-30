@@ -75,26 +75,26 @@ class Tokenizer:
 				char = self.file.read_character(ignore_whitespace=not read_spaces)
 			except:
 				break
-			
-			# handle keyword matching (function, for, if, etc)
-			if(
-				regex.keywords.match(self.buffer)
-				and regex.keywords.match(self.buffer + char) == None
-				and (
-					regex.valid_symbol.match(self.buffer + char) == None
-					or self.file.skipped_space
-				)
-				and tree.no_keywords_in_code_block == False
-			):
-				for keyword_regex, expression_class in keyword_regexes.items():
-					if keyword_regex.match(self.buffer):
-						self.add_expression(tree, expression_class.read_expression(self, tree))
-						self.buffer = ""
-						break
-				
-				continue
 
 			try:
+				# handle keyword matching (function, for, if, etc)
+				if(
+					regex.keywords.match(self.buffer)
+					and regex.keywords.match(self.buffer + char) == None
+					and (
+						regex.valid_symbol.match(self.buffer + char) == None
+						or self.file.skipped_space
+					)
+					and tree.no_keywords_in_code_block == False
+				):
+					for keyword_regex, expression_class in keyword_regexes.items():
+						if keyword_regex.match(self.buffer):
+							self.add_expression(tree, expression_class.read_expression(self, tree))
+							self.buffer = ""
+							break
+					
+					continue
+				
 				for stop_at in buffer_give_back_stop_at:
 					if stop_at.match(self.buffer):
 						self.file.current_index = self.file.current_index - len(self.buffer) - 2
@@ -180,7 +180,7 @@ class Tokenizer:
 					self.buffer = self.buffer + char
 			except Exception as error:
 				traceback.print_stack()
-				print(f"Encountered exception '{error.__str__()}' at line #{self.file.line_count} character #{self.file.current_index}")
+				print(f"Encountered exception '{error.__str__()}' at line #{self.file.current_line_index} character #{self.file.current_index}")
 				return None
 
 		return tree

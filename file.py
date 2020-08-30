@@ -6,7 +6,6 @@ class File:
 		self.file = open(filename, "r")
 		self.current_line = None
 		self.current_line_index = -1
-		self.line_count = 0
 		self.current_index = 0
 		self.lines = []
 		self.eat_file()
@@ -20,9 +19,9 @@ class File:
 	def absorb_line(self):
 		rest = self.current_line[self.current_index:-1]
 		self.current_line_index = self.current_line_index + 1
-		self.current_line = self.lines[self.current_line_index]
-		if self.current_line_index >= len(self.lines):
-			raise Exception("EOF")
+		if self.current_line_index < len(self.lines):
+			self.current_line = self.lines[self.current_line_index]			
+
 		self.current_index = 0
 		return rest
 	
@@ -78,8 +77,3 @@ class File:
 			char = self.current_line[self.current_index]
 
 		return self.current_line[self.current_index]
-	
-	def give_characters_back(self, until):
-		while self.give_character_back() != until:
-			pass
-		self.read_character()
