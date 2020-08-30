@@ -70,6 +70,8 @@ class ConditionalExpression(Expression):
 		# figure out if this is a single line if-statement or not
 		if tokenizer.file.read_character() == "{":
 			tokenizer.tokenize(stop_ats=[closing_curly_bracket_token], tree=expression)
+		else:
+			tokenizer.file.give_character_back()
 
 		return expression
 
