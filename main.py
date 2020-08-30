@@ -1,4 +1,5 @@
-from config import set_config, get_config, add_exported_lines, add_read_file
+from cache import add_to_cache, has_been_modified, load_cache, save_cache
+from config import add_exported_lines, add_read_file, add_skipped_file, get_config, set_config
 from file import File
 from tokenizer import Tokenizer
 from time import time
@@ -41,34 +42,42 @@ def scan_directory(directory, output_directory="./", file_replacement="{}.cs"):
 def transpile_file(filename, output_directory="./", file_replacement="{}.cs"):
 	path = Path(filename)
 
-	if get_config("verbose") == True:
-		print(f"Parsing '{path.absolute()}'")
-	
-	file = File(filename)
-	script_file = ScriptFile(filename)
-	tokenizer = Tokenizer(file)
-	tokenizer.tokenize(tree=script_file)
-	script = script_file.to_script()
+	if has_been_modified(path.absolute().__str__()):
+		if get_config("verbose") == True:
+			print(f"Parsing '{path.absolute()}'")
+		
+		file = File(filename)
+		script_file = ScriptFile(filename)
+		tokenizer = Tokenizer(file)
+		tokenizer.tokenize(tree=script_file)
+		script = script_file.to_script()
 
-	output_filename = ""
-	try:
-		output_filename = file_replacement.format(path.stem)
-	except:
-		print(f"Could not format file using '{file_replacement}'")
-		return
+		output_filename = ""
+		try:
+			output_filename = file_replacement.format(path.stem)
+		except:
+			print(f"Could not format file using '{file_replacement}'")
+			return
 
-	output = Path(f"{output_directory}/{output_filename}")
+		output = Path(f"{output_directory}/{output_filename}")
 
-	try:
-		output.parent.mkdir()
-	except:
-		pass
+		try:
+			os.makedirs(output.parent.absolute().__str__())
+		except:
+			pass
 
-	file = open(output.absolute(), "w")
-	file.write(script)
-	add_exported_lines(script.count("\n") + 1)
-	add_read_file()
-	file.close()
+		add_to_cache(path.absolute().__str__())
+
+		file = open(output.absolute(), "w")
+		file.write(script)
+		add_exported_lines(script.count("\n") + 1)
+		add_read_file()
+		file.close()
+	else:
+		if get_config("verbose") == True:
+			print(f"Skipped '{path.absolute()}'")
+		
+		add_skipped_file()
 
 optionlist, args = getopt.getopt(sys.argv[1:], "hmcvo:f:", ["help", "minify", "no-comments", "output=", "file-replace=", "include-cs", "verbose"])
 
@@ -99,6 +108,8 @@ if len(args) > 0:
 		if os.path.exists(arg):
 			start = time()
 			
+			load_cache()
+
 			if os.path.isdir(arg):
 				scan_directory(arg, output_directory=get_config("output"), file_replacement=get_config("filereplace"))
 			else:
@@ -107,8 +118,15 @@ if len(args) > 0:
 			parsed_lines = get_config("parsedlines")
 			exported_lines = get_config("exportedlines")
 			number_of_files = get_config("readfiles")
+			number_of_skipped_files = get_config("skippedfiles")
 			time_taken = "{:.2f}".format(round(time() - start, 2))
+
+			save_cache()
+
 			print(f"Read {number_of_files} files, parsed {parsed_lines} lines and exported {exported_lines} lines in {time_taken} seconds")
+
+			if number_of_skipped_files != 0:
+				print(f"Skipped {number_of_skipped_files} unmodified script files")
 		else:
 			if "-" in arg:
 				print(f"Failed to read file or directory '{arg}' (are options before files and directories? eggscript [options] [files or directory])")
