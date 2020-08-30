@@ -8,6 +8,8 @@ from script_file import ScriptFile
 
 from pathlib import Path
 import os
+import pyinotify
+from threading import Timer
 import sys, getopt
 
 def print_help():
@@ -79,8 +81,70 @@ def transpile_file(filename, output_directory="./", file_replacement="{}.cs"):
 		
 		add_skipped_file()
 
+class EventHandler(pyinotify.ProcessEvent):
+	def __init__(self, path):
+		self.timer = None
+		self.path = path
+	
+	def process_IN_CREATE(self, event):
+		if get_config("verbose") == True:
+			print(f"IN_CREATE for watcher '{self.path}'")
+		
+		self.handle_event(event)
+
+	def process_IN_MODIFY(self, event):
+		if get_config("verbose") == True:
+			print(f"IN_MODIFY for watcher '{self.path}'")
+
+		self.handle_event(event)
+
+	def process_IN_CLOSE_WRITE(self, event):
+		if get_config("verbose") == True:
+			print(f"IN_CLOSE_WRITE for watcher '{self.path}'")
+		
+		self.handle_event(event)
+
+	def process_IN_MOVED_TO(self, event):
+		if get_config("verbose") == True:
+			print(f"IN_MOVED_TO for watcher '{self.path}'")
+
+		self.handle_event(event)
+	
+	def handle_event(self, event):
+		if self.timer != None:
+			self.timer.cancel()
+
+		self.timer = Timer(2, self.re_transpile)
+		self.timer.start()
+	
+	def re_transpile(self):
+		set_config("parsedlines", 0)
+		set_config("exportedlines", 0)
+		set_config("readfiles", 0)
+		set_config("skippedfiles", 0)
+
+		print()
+		
+		if os.path.isdir(arg):
+			scan_directory(self.path, output_directory=get_config("output"), file_replacement=get_config("filereplace"))
+		else:
+			transpile_file(self.path, output_directory=get_config("output"), file_replacement=get_config("filereplace"))
+		
+		parsed_lines = get_config("parsedlines")
+		exported_lines = get_config("exportedlines")
+		number_of_files = get_config("readfiles")
+		number_of_skipped_files = get_config("skippedfiles")
+
+		print(f"Read {number_of_files} script files, parsed {parsed_lines} lines and exported {exported_lines} lines in {time_taken} seconds")
+
+def create_watcher(path):
+	watch_manager = pyinotify.WatchManager()
+	notifier = pyinotify.Notifier(watch_manager, EventHandler(path))
+	wdd = watch_manager.add_watch(path, pyinotify.IN_MODIFY | pyinotify.IN_CREATE | pyinotify.IN_CLOSE_WRITE | pyinotify.IN_MOVED_TO, rec=True)
+	notifier.loop()
+
 try:
-	optionlist, args = getopt.getopt(sys.argv[1:], "hmcvo:f:", ["help", "minify", "no-comments", "output=", "file-replace=", "include-cs", "verbose", "clear-cache"])
+	optionlist, args = getopt.getopt(sys.argv[1:], "whmcvo:f:", ["help", "minify", "no-comments", "output=", "file-replace=", "include-cs", "verbose", "clear-cache", "--watch"])
 
 	if len(args) > 0:
 		set_config("output", "./")
@@ -109,6 +173,8 @@ try:
 			elif option == "--no-comments":
 				set_config("nocomments", True)
 				add_cache_option("nocomments")
+			elif option == "-w" or option == "--watch":
+				set_config("watch", True)
 
 		# go through args and figure out what to do with them
 		for arg in args:
@@ -134,6 +200,12 @@ try:
 
 				if number_of_skipped_files != 0:
 					print(f"Skipped {number_of_skipped_files} unmodified script files")
+
+				if get_config("watch") == True:
+					path = Path(arg).absolute().__str__()
+					print(f"Watching '{path}' for changes")
+					create_watcher(path)
+				
 			else:
 				if "-" in arg:
 					print(f"Failed to read file or directory '{arg}' (are options before files and directories? eggscript [options] [files or directory])")
