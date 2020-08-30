@@ -1,6 +1,6 @@
 from config import get_config
 from expression import Expression
-from regex import text_operators
+from regex import modulus_next_character_token, operator_token, part_of_operator, text_operators, valid_operator
 
 class OperatorExpression(Expression):
 	def __init__(self, operator):
@@ -20,3 +20,47 @@ class OperatorExpression(Expression):
 			space = ""
 		
 		return f"{space}{self.operator.strip()}{space}"
+	
+	def read_expression(tokenizer):
+		tokenizer.file.give_character_back()
+		buffer = ""
+		operator_ban_space = 0
+		saved_operator = None
+		index = 0
+		while True:
+			char = tokenizer.file.read_character(ignore_whitespace=False)
+			if operator_token.match(char) or part_of_operator.match(char):
+				buffer = buffer + char
+			else:
+				operator_ban_space = index
+				break
+			
+			if valid_operator.match(buffer):
+				saved_operator = buffer
+			
+			index = index + 1
+
+		if saved_operator != None:
+			difference = len(buffer) - len(saved_operator)
+			for i in range(0, difference + 1):
+				tokenizer.file.give_character_back()
+			
+			# special case for namespaces and modulus
+			next_char = tokenizer.file.read_character()
+			if (
+				(next_char == ":" and saved_operator == ":")
+				or (modulus_next_character_token.match(next_char) == None and saved_operator == "%")
+			):
+				tokenizer.file.give_character_back()
+				tokenizer.file.give_character_back()
+				tokenizer.operator_ban = (tokenizer.file.current_line_index, tokenizer.file.current_index + operator_ban_space)
+				return None
+			else:
+				tokenizer.file.give_character_back()
+			
+			return OperatorExpression(saved_operator)
+		else:
+			for i in range(0, operator_ban_space + 1):
+				tokenizer.file.give_character_back()
+			tokenizer.operator_ban = (tokenizer.file.current_line_index, tokenizer.file.current_index + operator_ban_space)
+			return None

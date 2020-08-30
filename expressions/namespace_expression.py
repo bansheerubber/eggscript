@@ -1,4 +1,5 @@
 from expression import Expression
+from regex import chaining_token, closing_bracket_token, closing_parenthesis_token, namespace_token, operator_token_without_concatenation, semicolon_token
 
 class NamespaceExpression(Expression):
 	def __init__(self):
@@ -18,3 +19,13 @@ class NamespaceExpression(Expression):
 			output = output + expression.to_script() + "::"
 
 		return output[0:-2] + self.handle_semicolon()
+	
+	def read_expression(tokenizer, inheritable_give_back_stop_at):
+		namespace_expression = NamespaceExpression()
+		tokenizer.add_expression(namespace_expression, tokenizer.get_symbol(tokenizer.buffer))
+		tokenizer.file.give_character_back()
+		while tokenizer.file.read_character() == ":" and tokenizer.file.read_character() == ":":
+			tokenizer.tokenize(stop_ats=[], give_back_stop_ats=inheritable_give_back_stop_at + [semicolon_token, namespace_token, operator_token_without_concatenation, closing_parenthesis_token, closing_bracket_token, chaining_token], tree=namespace_expression)
+		tokenizer.file.give_character_back()
+			
+		return namespace_expression

@@ -18,3 +18,12 @@ class Comment(Expression):
 			return self.comment + "\n"
 		else:
 			return self.comment
+	
+	def read_expression(tokenizer):
+		while tokenizer.file.give_character_back() != "/":
+			pass
+		tokenizer.file.give_character_back()
+			
+		# read the rest of the line
+		comment = tokenizer.file.absorb_line()
+		return Comment(comment)

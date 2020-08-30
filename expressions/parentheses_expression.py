@@ -1,4 +1,5 @@
 from expression import Expression
+from regex import closing_parenthesis_token
 
 class ParenthesesExpression(Expression):
 	def __init__(self):
@@ -21,3 +22,8 @@ class ParenthesesExpression(Expression):
 			return f"(((({value}))))"
 
 		return f"({value})"
+	
+	def read_expression(tokenizer):
+		expression = ParenthesesExpression()
+		tokenizer.tokenize(stop_ats=[closing_parenthesis_token], tree=expression)
+		return expression

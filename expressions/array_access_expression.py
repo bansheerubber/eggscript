@@ -2,6 +2,7 @@ from argument_expression import ArgumentExpression
 from config import get_config
 from expression import Expression
 import re
+from regex import closing_bracket_token, semicolon_token
 
 class ArrayAccessExpression(Expression):
 	def __init__(self, symbol):
@@ -32,3 +33,10 @@ class ArrayAccessExpression(Expression):
 			value = (value + argument.to_script() + "," + space)
 
 		return f"{self.symbol.to_script()}[{re.sub(r',$', '', value.strip())}]{self.handle_semicolon()}"
+	
+	def read_expression(tokenizer):
+		expression = ArrayAccessExpression(tokenizer.get_symbol(tokenizer.buffer))
+		tokenizer.buffer = ""
+		tokenizer.tokenize(stop_ats=[closing_bracket_token], give_back_stop_ats=[semicolon_token], tree=expression)
+		expression.convert_expressions_to_arguments()
+		return expression
