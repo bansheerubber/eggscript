@@ -14,7 +14,7 @@ class ContinueExpression(Expression):
 	def to_script(self):
 		return f"continue{self.handle_semicolon()}"
 	
-	def read_expression(tokenizer):
+	def read_expression(tokenizer, tree):
 		tokenizer.file.give_character_back()
 		return ContinueExpression()
 

@@ -57,7 +57,7 @@ class NewObjectExpression(Expression):
 
 		return full_output + self.handle_semicolon()
 	
-	def read_expression(tokenizer):
+	def read_expression(tokenizer, tree):
 		expression = NewObjectExpression()
 		tokenizer.file.give_character_back()
 
@@ -67,6 +67,7 @@ class NewObjectExpression(Expression):
 		tokenizer.tokenize(stop_ats=[closing_parenthesis_token], tree=expression)
 		expression.convert_expressions_to_arguments()
 
+		tokenizer.tokenize(give_back_stop_ats=[opening_curly_bracket_token], tree=expression)
 		char = tokenizer.file.read_character() # absorb first "{"
 		if opening_curly_bracket_token.match(char):
 			tokenizer.tokenize(stop_ats=[closing_curly_bracket_token], tree=expression)

@@ -1,6 +1,6 @@
 from config import get_config
 from expression import Expression
-from regex import closing_curly_bracket_token, closing_parenthesis_token, semicolon_token, valid_for
+from regex import closing_curly_bracket_token, closing_parenthesis_token, opening_curly_bracket_token, semicolon_token, valid_for
 
 class ForLoopExpression(Expression):
 	def __init__(self):
@@ -62,7 +62,7 @@ class ForLoopExpression(Expression):
 
 		return full_output
 	
-	def read_expression(tokenizer):
+	def read_expression(tokenizer, tree):
 		expression = ForLoopExpression()
 		
 		tokenizer.tokenize(stop_ats=[semicolon_token], tree=expression)
@@ -74,7 +74,7 @@ class ForLoopExpression(Expression):
 		tokenizer.tokenize(stop_ats=[closing_parenthesis_token], tree=expression)
 		expression.move_increment_expressions()
 
-		tokenizer.file.read_character() # absorb first "{"
+		tokenizer.tokenize(stop_ats=[opening_curly_bracket_token], tree=expression)
 		tokenizer.tokenize(stop_ats=[closing_curly_bracket_token], tree=expression)
 
 		return expression

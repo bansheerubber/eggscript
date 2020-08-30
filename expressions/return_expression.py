@@ -21,7 +21,7 @@ class ReturnExpression(Expression):
 
 		return f"return{output}{self.handle_semicolon()}"
 	
-	def read_expression(tokenizer):
+	def read_expression(tokenizer, tree):
 		expression = ReturnExpression()
 		
 		tokenizer.file.give_character_back()

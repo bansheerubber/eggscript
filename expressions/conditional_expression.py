@@ -1,6 +1,6 @@
 from config import get_config
 from expression import Expression
-from regex import closing_curly_bracket_token, closing_parenthesis_token, valid_conditional
+from regex import closing_curly_bracket_token, closing_parenthesis_token, opening_curly_bracket_token, valid_conditional
 
 class ConditionalExpression(Expression):
 	def __init__(self):
@@ -47,7 +47,7 @@ class ConditionalExpression(Expression):
 
 		return full_output
 	
-	def read_expression(tokenizer):
+	def read_expression(tokenizer, tree):
 		expression = ConditionalExpression()
 		tokenizer.file.give_character_back()
 		if tokenizer.buffer == "else":
@@ -63,7 +63,7 @@ class ConditionalExpression(Expression):
 			tokenizer.tokenize(stop_ats=[closing_parenthesis_token], tree=expression)
 			expression.move_expressions()
 		
-		tokenizer.file.read_character() # absorb first "{"
+		tokenizer.tokenize(stop_ats=[opening_curly_bracket_token], tree=expression)
 		tokenizer.tokenize(stop_ats=[closing_curly_bracket_token], tree=expression)
 
 		return expression

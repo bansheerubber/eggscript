@@ -1,7 +1,7 @@
 from config import get_config
 from expression import Expression
 from inheritance_expression import InheritanceExpression
-from regex import closing_curly_bracket_token, closing_parenthesis_token, colon_token, opening_parenthesis_token, valid_datablock
+from regex import closing_curly_bracket_token, closing_parenthesis_token, colon_token, opening_curly_bracket_token, opening_parenthesis_token, valid_datablock
 
 class DatablockExpression(Expression):
 	def __init__(self):
@@ -50,7 +50,7 @@ class DatablockExpression(Expression):
 
 		return full_output
 	
-	def read_expression(tokenizer):
+	def read_expression(tokenizer, tree):
 		expression = DatablockExpression()
 		tokenizer.file.give_character_back()
 
@@ -70,7 +70,7 @@ class DatablockExpression(Expression):
 			expression.convert_expression_to_name()
 			tokenizer.file.give_character_back()
 
-		tokenizer.file.read_character() # absorb first "{"
+		tokenizer.tokenize(stop_ats=[opening_curly_bracket_token], tree=expression)
 		tokenizer.tokenize(stop_ats=[closing_curly_bracket_token], tree=expression)
 
 		return expression

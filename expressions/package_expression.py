@@ -10,7 +10,7 @@ class PackageExpression(Expression):
 	
 	def convert_expression_to_name(self):
 		self.name_symbol = self.expressions[0]
-		self.expressions = []
+		self.expressions = self.expressions[1:]
 	
 	def __str__(self):
 		return f"PackageExpression({self.name_symbol}, {self.expressions})"
@@ -39,7 +39,7 @@ class PackageExpression(Expression):
 
 		return full_output
 	
-	def read_expression(tokenizer):
+	def read_expression(tokenizer, tree):
 		expression = PackageExpression()
 
 		tokenizer.file.give_character_back()

@@ -1,6 +1,6 @@
 from config import get_config
 from expression import Expression
-from regex import closing_curly_bracket_token, closing_parenthesis_token, valid_while
+from regex import closing_curly_bracket_token, closing_parenthesis_token, opening_curly_bracket_token, valid_while
 
 class WhileLoopExpression(Expression):
 	def __init__(self):
@@ -43,13 +43,13 @@ class WhileLoopExpression(Expression):
 
 		return full_output
 	
-	def read_expression(tokenizer):
+	def read_expression(tokenizer, tree):
 		expression = WhileLoopExpression()
 		
 		tokenizer.tokenize(stop_ats=[closing_parenthesis_token], tree=expression)
 		expression.convert_expressions_to_conditionals()
 
-		tokenizer.file.read_character() # absorb first "{"
+		tokenizer.tokenize(stop_ats=[opening_curly_bracket_token], tree=expression)
 		tokenizer.tokenize(stop_ats=[closing_curly_bracket_token], tree=expression)
 
 		return expression

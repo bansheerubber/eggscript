@@ -41,7 +41,7 @@ class CaseExpression(Expression):
 	
 		return full_output
 	
-	def read_expression(tokenizer):
+	def read_expression(tokenizer, tree):
 		expression = CaseExpression()
 		tokenizer.file.give_character_back()
 		tokenizer.tokenize(stop_ats=[colon_token], tree=expression)

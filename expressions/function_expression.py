@@ -1,7 +1,7 @@
 from config import get_config
 from argument_expression import ArgumentExpression
 from expression import Expression
-from regex import closing_curly_bracket_token, closing_parenthesis_token, opening_parenthesis_token, valid_function
+from regex import closing_curly_bracket_token, closing_parenthesis_token, opening_curly_bracket_token, opening_parenthesis_token, valid_function
 import re
 
 class FunctionExpression(Expression):
@@ -53,7 +53,7 @@ class FunctionExpression(Expression):
 
 		return full_output
 	
-	def read_expression(tokenizer):
+	def read_expression(tokenizer, tree):
 		expression = FunctionExpression()
 
 		tokenizer.file.give_character_back()
@@ -63,7 +63,7 @@ class FunctionExpression(Expression):
 		tokenizer.tokenize(stop_ats=[closing_parenthesis_token], tree=expression)
 		expression.convert_expressions_to_arguments()
 
-		tokenizer.file.read_character() # absorb first "{"
+		tokenizer.tokenize(stop_ats=[opening_curly_bracket_token], tree=expression)
 		tokenizer.tokenize(stop_ats=[closing_curly_bracket_token], tree=expression)
 
 		return expression

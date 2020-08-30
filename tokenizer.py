@@ -249,7 +249,7 @@ class Tokenizer:
 				):
 					for keyword_regex, expression_class in keyword_regexes.items():
 						if keyword_regex.match(self.buffer):
-							self.add_expression(tree, expression_class.read_expression(self))
+							self.add_expression(tree, expression_class.read_expression(self, tree))
 							self.buffer = ""
 							break
 					

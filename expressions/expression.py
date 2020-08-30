@@ -31,5 +31,5 @@ class Expression:
 	def add_keyword_regex(regex, expression_class):
 		keyword_regexes[regex] = expression_class
 	
-	def read_expression(self):
+	def read_expression(tokenizer, tree):
 		print("Unimplemented read_expression()")

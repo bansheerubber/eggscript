@@ -32,7 +32,7 @@ class DefaultExpression(Expression):
 	
 		return full_output
 	
-	def read_expression(tokenizer):
+	def read_expression(tokenizer, tree):
 		expression = DefaultExpression()
 		# read up until next case, next default, or }
 		tokenizer.tokenize(give_back_stop_ats=[closing_curly_bracket_token], buffer_give_back_stop_at=[valid_case, valid_default], tree=expression)
