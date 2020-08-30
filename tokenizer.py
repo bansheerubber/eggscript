@@ -143,6 +143,8 @@ class Tokenizer:
 								new_expression = PostfixExpression(last_expression, operator)
 								last_expression.parent = new_expression
 								self.add_expression(tree, new_expression)
+							elif regex.valid_template_string.match(operator.operator):
+								self.add_expression(tree, StringLiteral.read_expression(self, is_template=True))
 							else:
 								self.add_expression(tree, operator)
 				elif (
@@ -166,7 +168,7 @@ class Tokenizer:
 				elif regex.semicolon_token.match(char):
 					# just absorb the character and move on, we have automatic semicolon placement
 					self.absorb_buffer(tree)
-				elif regex.string_token.match(char): # handle strings
+				elif regex.string_token.match(char): # handle strings (except for template strings)
 					self.add_expression(tree, StringLiteral.read_expression(self))
 				elif regex.parentheses_token.match(char):
 					if regex.opening_parenthesis_token.match(char) and regex.valid_symbol.match(self.buffer) == None: # handle math parentheses
