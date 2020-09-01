@@ -24,15 +24,19 @@ class OperatorExpression(Expression):
 	def read_expression(tokenizer):
 		tokenizer.file.give_character_back()
 		buffer = ""
-		operator_ban_space = 0
+		operator_ban_index = 0
 		saved_operator = None
+		encountered_spaces = 0
 		index = 0
 		while True:
 			char = tokenizer.file.read_character(ignore_whitespace=False)
+			if char == " ":
+				encountered_spaces = encountered_spaces + 1
+
 			if operator_token.match(char) or part_of_operator.match(char):
 				buffer = buffer + char
 			else:
-				operator_ban_space = index
+				operator_ban_index = index - encountered_spaces
 				break
 			
 			if valid_operator.match(buffer):
@@ -53,14 +57,14 @@ class OperatorExpression(Expression):
 			):
 				tokenizer.file.give_character_back()
 				tokenizer.file.give_character_back()
-				tokenizer.operator_ban = (tokenizer.file.current_line_index, tokenizer.file.current_index + operator_ban_space)
+				tokenizer.operator_ban = (tokenizer.file.current_line_index, tokenizer.file.current_index + operator_ban_index)
 				return None
 			else:
 				tokenizer.file.give_character_back()
 			
 			return OperatorExpression(saved_operator)
 		else:
-			for i in range(0, operator_ban_space + 1):
+			for i in range(0, operator_ban_index + 1):
 				tokenizer.file.give_character_back()
-			tokenizer.operator_ban = (tokenizer.file.current_line_index, tokenizer.file.current_index + operator_ban_space)
+			tokenizer.operator_ban = (tokenizer.file.current_line_index, tokenizer.file.current_index + operator_ban_index)
 			return None
