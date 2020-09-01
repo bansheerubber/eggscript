@@ -3,8 +3,9 @@ from literal import Literal
 from method_expression import MethodExpression
 from operator_expression import OperatorExpression
 from parentheses_expression import ParenthesesExpression
+from regex import vector_escape_token, vector_operator_tokens, vector_token
 from symbol import Symbol
-from regex import vector_operator_tokens, vector_token
+from vector_escape_expression import VectorEscapeExpression
 
 class VectorExpression(Expression):
 	def __init__(self):
@@ -30,7 +31,7 @@ class VectorExpression(Expression):
 	def read_expression(tokenizer):
 		expression = VectorExpression()
 
-		tokenizer.tokenize(give_back_stop_ats=[vector_operator_tokens, vector_token], tree=expression)
+		tokenizer.tokenize(give_back_stop_ats=[vector_operator_tokens, vector_token], tree=expression) # only support vector operators
 		while vector_token.match(tokenizer.file.read_character()) == None:
 			math_operator = OperatorExpression(tokenizer.file.give_character_back())
 			tokenizer.file.read_character()
@@ -131,6 +132,7 @@ VectorExpression.operator_table = {
 	"*": Symbol("vectorScale"),
 	"-": Symbol("vectorSub"),
 	"/": Symbol("vectorDivide"),
+	".": Symbol("vectorDot"),
 }
 
 VectorExpression.modifier_operator_table = {

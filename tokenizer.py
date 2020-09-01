@@ -37,6 +37,7 @@ from symbol import Symbol
 from switch_expression import SwitchExpression
 from variable_assignment_expression import VariableAssignmentExpression
 from variable_symbol import VariableSymbol
+from vector_escape_expression import VectorEscapeExpression
 from vector_expression import VectorExpression
 from while_loop_expression import WhileLoopExpression
 
@@ -178,13 +179,15 @@ class Tokenizer:
 						self.add_expression(tree, ParenthesesExpression.read_expression(self))
 					elif regex.opening_parenthesis_token.match(char) and regex.valid_symbol.match(self.buffer) != None: # handle method parentheses
 						self.add_expression(tree, MethodExpression.read_expression(self))
+				elif regex.vector_escape_token.match(char):
+					self.add_expression(tree, VectorEscapeExpression.read_expression(self))
 				elif regex.opening_bracket_token.match(char): # handle array accessing
 					self.add_expression(tree, ArrayAccessExpression.read_expression(self))
 					self.buffer = ""
 				else: # when in doubt, add to buffer
 					self.buffer = self.buffer + char
 			except Exception as error:
-				traceback.print_stack()
+				traceback.print_exc()
 				print(f"Encountered exception '{error.__str__()}' at line #{self.file.current_line_index} character #{self.file.current_index}")
 				return None
 

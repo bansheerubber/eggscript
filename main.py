@@ -216,7 +216,7 @@ try:
 except Exception as error:
 	arguments = " ".join(sys.argv[1:])
 	if "-v" in arguments or "--verbose" in arguments:
-		traceback.print_stack()
+		traceback.print_exc()
 		print(f"Encountered exception '{error.__str__()}'")
 	else:
 		print_help()
