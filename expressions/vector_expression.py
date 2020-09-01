@@ -1,3 +1,4 @@
+from enum import IntEnum
 from expression import Expression
 from literal import Literal
 from method_expression import MethodExpression
@@ -8,6 +9,7 @@ from symbol import Symbol
 from syntax_exception import SyntaxException
 from vector_escape_expression import VectorEscapeExpression
 from vector_length_expression import VectorLengthExpression
+from warn import warn
 
 class VectorExpression(Expression):
 	def __init__(self, tokenizer=None):
@@ -93,6 +95,19 @@ class VectorExpression(Expression):
 				self.handle_order_of_operations(expression=found_expression)
 
 	def handle_order_of_operations(self, offset=0, min_precedence=0, expression=None):
+		def is_maybe_scalar_expression(expression):
+			# checking to see if this expression is a scalar expression
+			if (
+				type(expression) == VectorEscapeExpression
+				or (
+					type(expression) == MethodExpression
+					and expression.method_symbol.name == "vectorDot"
+				)
+			):
+				return True
+			else:
+				return False
+		
 		if expression == None:
 			expression = self
 		
@@ -126,6 +141,43 @@ class VectorExpression(Expression):
 			raise SyntaxException(self, f"Vector expression syntax error: invalid operator {operator.operator}")
 		elif next_operator != None and next_operator.operator not in VectorExpression.operator_table:
 			raise SyntaxException(self, f"Vector expression syntax error: invalid operator {next_operator.operator}")
+		
+		# check for type errors
+		if (
+			VectorExpression.operator_allows_scalars[operator.operator] == OperatorScalarOption.NO_SCALARS
+		):
+			if (
+				(
+					is_maybe_scalar_expression(left_vector) == True
+					and is_maybe_scalar_expression(right_vector) == False
+				)
+				or (
+					is_maybe_scalar_expression(left_vector) == False
+					and is_maybe_scalar_expression(right_vector) == True
+				)
+			):
+				raise SyntaxException(self, f"Vector expression syntax error: cannot mix scalars and vectors for operator {operator.operator} at {left_vector.to_script()} {operator.operator} {right_vector.to_script()}")
+			elif (
+				is_maybe_scalar_expression(left_vector) == True
+				and is_maybe_scalar_expression(right_vector) == True
+			):
+				raise SyntaxException(self, f"Vector expression syntax error: only vector operations are allowed inside backticks, not {left_vector.to_script()} {operator.operator} {right_vector.to_script()}. To escape, use the vector escape syntax " + "{}")
+		elif (
+			VectorExpression.operator_allows_scalars[operator.operator] == OperatorScalarOption.RIGHT_OR_LEFT_SCALAR
+			or VectorExpression.operator_allows_scalars[operator.operator] == OperatorScalarOption.ONLY_RIGHT_SCALAR
+		):
+			if VectorExpression.operator_allows_scalars[operator.operator] == OperatorScalarOption.ONLY_RIGHT_SCALAR and is_maybe_scalar_expression(left_vector) == True:
+				raise SyntaxException(self, f"Vector expression syntax error: the {operator.operator} operator does not support left-handed scalar operations at {left_vector.to_script()} {operator.operator} {right_vector.to_script()}")
+			elif (
+				is_maybe_scalar_expression(left_vector) == False
+				and is_maybe_scalar_expression(right_vector) == False
+			):
+				warn(self, f"Vector expression syntax warning: implicit usage of scalars for operator {operator.operator} at {left_vector.to_script()} {operator.operator} {right_vector.to_script()}. Will only work at run-time if right-hand side is a scalar")
+			elif (
+				is_maybe_scalar_expression(left_vector) == True
+				and is_maybe_scalar_expression(right_vector) == True
+			):
+				raise SyntaxException(self, f"Vector expression syntax error: only vector operations are allowed inside backticks, not {left_vector.to_script()} {operator.operator} {right_vector.to_script()}. To escape, use the vector escape syntax " + "{}")
 
 		# do precedence rules
 		if next_operator != None:
@@ -135,6 +187,15 @@ class VectorExpression(Expression):
 		# these operands may have changed due to precedence rules. re-fetch
 		left_vector = expression.safe_get_index(0 + offset)
 		right_vector = expression.safe_get_index(2 + offset)
+
+		# determine which vector is a scalar and if we need to flip the sides
+		if (
+			VectorExpression.operator_allows_scalars[operator.operator] == 1
+			and is_maybe_scalar_expression(left_vector)
+		):
+			right_vector = expression.safe_get_index(0 + offset)
+			left_vector = expression.safe_get_index(2 + offset)
+
 		self.replace_operation_with_call(offset, left_vector, operator, right_vector, expression=expression)
 		self.handle_order_of_operations(offset=offset, expression=expression)
 	
@@ -190,7 +251,21 @@ class VectorExpression(Expression):
 				method_expression.expressions.append(argument)
 		method_expression.convert_expressions_to_arguments()
 		method_expression.convert_expressions_to_arguments()
-	
+
+class OperatorScalarOption(IntEnum):
+	NO_SCALARS = 0
+	RIGHT_OR_LEFT_SCALAR = 1
+	ONLY_RIGHT_SCALAR = 2
+
+
+VectorExpression.operator_allows_scalars = {
+	"+": OperatorScalarOption.NO_SCALARS,
+	"*": OperatorScalarOption.RIGHT_OR_LEFT_SCALAR,
+	"-": OperatorScalarOption.NO_SCALARS,
+	"/": OperatorScalarOption.ONLY_RIGHT_SCALAR,
+	".": OperatorScalarOption.NO_SCALARS,
+}
+
 VectorExpression.operator_table = {
 	"+": (Symbol("vectorAdd"), [None], [None]),
 	"*": (Symbol("vectorScale"), [None], [None]),

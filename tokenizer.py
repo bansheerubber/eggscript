@@ -184,8 +184,10 @@ class Tokenizer:
 				else: # when in doubt, add to buffer
 					self.buffer = self.buffer + char
 			except Exception as error:
-				traceback.print_exc()
-				print(f"Encountered exception '{error.__str__()}' at line #{self.file.current_line_index} character #{self.file.current_index}")
+				if get_config("verbose") == True:
+					traceback.print_exc()
+
+				print(f"\033[91mEncountered exception '{error.__str__()}' at line #{self.file.current_line_index} character #{self.file.current_index}\033[0m")
 				return None
 
 		return tree
