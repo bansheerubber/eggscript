@@ -28,6 +28,7 @@ def print_help():
 		"-v, --verbose 								Verbose output",
 		"--no-comments								Do not output comments",
 		"--clear-cache								Ignore caching and force re-transpilation",
+		"--no-warnings								Do not print any warnings",
 	]
 	print("\n".join(help_list))
 
@@ -144,7 +145,7 @@ def create_watcher(path):
 	notifier.loop()
 
 try:
-	optionlist, args = getopt.getopt(sys.argv[1:], "whmcvo:f:", ["help", "minify", "no-comments", "output=", "file-replace=", "include-cs", "verbose", "clear-cache", "--watch"])
+	optionlist, args = getopt.getopt(sys.argv[1:], "whmcvo:f:", ["help", "minify", "no-comments", "output=", "file-replace=", "include-cs", "verbose", "clear-cache", "watch", "no-warnings"])
 
 	if len(args) > 0:
 		set_config("output", "./")
@@ -175,6 +176,8 @@ try:
 				add_cache_option("nocomments")
 			elif option == "-w" or option == "--watch":
 				set_config("watch", True)
+			elif option == "--no-warnings":
+				set_config("no-warnings", True)
 
 		load_cache()
 
