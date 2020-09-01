@@ -208,7 +208,7 @@ class VectorExpression(Expression):
 		del expression.expressions[index_of_left:index_of_left + 1]
 
 		if operator.operator not in VectorExpression.modifier_operator_table:
-			raise SyntaxException(f"Vector syntax error: {operator.operator} is invalid modifier operator")
+			raise SyntaxException(self, f"Vector syntax error: {operator.operator} is invalid modifier operator")
 
 		modifier_method = VectorExpression.modifier_operator_table[operator.operator]
 

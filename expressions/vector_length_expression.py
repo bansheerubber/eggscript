@@ -17,7 +17,7 @@ class VectorLengthExpression(ParenthesesExpression):
 	
 	def to_script(self):		
 		if len(self.expressions) == 0:
-			raise SyntaxException("Vector length exception: empty expression")
+			raise SyntaxException(self, "Vector length exception: empty expression")
 		
 		if (
 			len(self.expressions) == 1

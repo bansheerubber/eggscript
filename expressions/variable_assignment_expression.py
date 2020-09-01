@@ -21,7 +21,7 @@ class VariableAssignmentExpression(Expression):
 			value = value + expression.to_script()
 
 		if value == "":
-			raise SyntaxException(f"Variable assignment syntax error: could not find right hand side value '{self.left_hand_expression}'")
+			raise SyntaxException(self, f"Variable assignment syntax error: could not find right hand side value '{self.left_hand_expression}'")
 
 		return f"{self.left_hand_expression.to_script()}{self.assignment_operator.to_script()}{value}{self.handle_semicolon()}" 
 	
