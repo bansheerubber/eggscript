@@ -4,8 +4,8 @@ from expression import Expression
 from regex import closing_curly_bracket_token, closing_parenthesis_token, opening_curly_bracket_token, opening_parenthesis_token, semicolon_token,valid_new
 
 class NewObjectExpression(Expression):
-	def __init__(self):
-		super().__init__()
+	def __init__(self, tokenizer=None):
+		super().__init__(tokenizer=tokenizer)
 		self.class_expressions = None
 		self.argument_expressions = []
 		self.is_code_block = True
@@ -18,7 +18,7 @@ class NewObjectExpression(Expression):
 	
 	def convert_expressions_to_arguments(self):
 		if len(self.expressions) > 0:
-			self.argument_expressions.append(ArgumentExpression(expressions=self.expressions))
+			self.argument_expressions.append(ArgumentExpression(expressions=self.expressions, current_line_index=self.current_line_index, current_index=self.current_index, current_file_name=self.current_file_name))
 			self.expressions = []
 	
 	def __str__(self):
@@ -58,7 +58,7 @@ class NewObjectExpression(Expression):
 		return full_output + self.handle_semicolon()
 	
 	def read_expression(tokenizer, tree):
-		expression = NewObjectExpression()
+		expression = NewObjectExpression(tokenizer=tokenizer)
 		tokenizer.file.give_character_back()
 
 		tokenizer.tokenize(stop_ats=[opening_parenthesis_token], tree=expression)

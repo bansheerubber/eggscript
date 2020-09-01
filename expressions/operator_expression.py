@@ -3,8 +3,8 @@ from expression import Expression
 from regex import modulus_next_character_token, operator_token, part_of_operator, text_operators, valid_operator
 
 class OperatorExpression(Expression):
-	def __init__(self, operator):
-		super().__init__()
+	def __init__(self, operator, tokenizer=None, no_errors=False):
+		super().__init__(tokenizer=tokenizer, no_errors=no_errors)
 		self.operator = operator
 		self.parent = None
 	
@@ -62,7 +62,7 @@ class OperatorExpression(Expression):
 			else:
 				tokenizer.file.give_character_back()
 			
-			return OperatorExpression(saved_operator)
+			return OperatorExpression(saved_operator, tokenizer=tokenizer)
 		else:
 			for i in range(0, operator_ban_index + 1):
 				tokenizer.file.give_character_back()

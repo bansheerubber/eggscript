@@ -1,8 +1,8 @@
 from expression import Expression
 
 class PostfixExpression(Expression):
-	def __init__(self, expression, operator):
-		super().__init__()
+	def __init__(self, expression, operator, tokenizer=None):
+		super().__init__(tokenizer=tokenizer)
 		self.expression = expression
 		self.operator = operator
 	

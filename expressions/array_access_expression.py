@@ -5,8 +5,8 @@ import re
 from regex import closing_bracket_token, semicolon_token
 
 class ArrayAccessExpression(Expression):
-	def __init__(self, symbol):
-		super().__init__()
+	def __init__(self, symbol, tokenizer=None):
+		super().__init__(tokenizer=tokenizer)
 		self.symbol = symbol
 		self.argument_expressions = []
 		self.parent = None
@@ -14,7 +14,7 @@ class ArrayAccessExpression(Expression):
 	
 	def convert_expressions_to_arguments(self):
 		if len(self.expressions) > 0:
-			self.argument_expressions.append(ArgumentExpression(expressions=self.expressions))
+			self.argument_expressions.append(ArgumentExpression(expressions=self.expressions, current_line_index=self.current_line_index, current_index=self.current_index, current_file_name=self.current_file_name))
 			self.expressions = []
 	
 	def __str__(self):
@@ -35,7 +35,7 @@ class ArrayAccessExpression(Expression):
 		return f"{self.symbol.to_script()}[{re.sub(r',$', '', value.strip())}]{self.handle_semicolon()}"
 	
 	def read_expression(tokenizer):
-		expression = ArrayAccessExpression(tokenizer.get_symbol(tokenizer.buffer))
+		expression = ArrayAccessExpression(tokenizer.get_symbol(tokenizer.buffer), tokenizer=tokenizer)
 		tokenizer.buffer = ""
 		tokenizer.tokenize(stop_ats=[closing_bracket_token], give_back_stop_ats=[semicolon_token], tree=expression)
 		expression.convert_expressions_to_arguments()

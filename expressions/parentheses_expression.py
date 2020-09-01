@@ -1,9 +1,10 @@
 from expression import Expression
 from regex import closing_parenthesis_token
+from syntax_exception import SyntaxException
 
 class ParenthesesExpression(Expression):
-	def __init__(self):
-		super().__init__()
+	def __init__(self, tokenizer=None):
+		super().__init__(tokenizer=tokenizer)
 		self.parent = None
 		self.is_chainable = True
 	
@@ -19,11 +20,11 @@ class ParenthesesExpression(Expression):
 			value = value + expression.to_script()
 
 		if value == "":
-			raise Exception("Empty parentheses expression")
+			raise SyntaxException(self, "Parentheses syntax error: empty expression")
 
 		return f"({value})"
 	
 	def read_expression(tokenizer):
-		expression = ParenthesesExpression()
+		expression = ParenthesesExpression(tokenizer=tokenizer)
 		tokenizer.tokenize(stop_ats=[closing_parenthesis_token], tree=expression)
 		return expression

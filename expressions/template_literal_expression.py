@@ -3,8 +3,8 @@ from expression import Expression
 from regex import template_literal_token
 
 class TemplateLiteralExpression(Expression):
-	def __init__(self):
-		super().__init__()
+	def __init__(self, tokenizer=None):
+		super().__init__(tokenizer=tokenizer)
 		self.strings = []
 		self.templates = []
 		self.parent = None

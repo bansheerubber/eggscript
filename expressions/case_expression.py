@@ -3,8 +3,8 @@ from expression import Expression
 from regex import closing_curly_bracket_token, colon_token, valid_case, valid_default
 
 class CaseExpression(Expression):
-	def __init__(self):
-		super().__init__()
+	def __init__(self, tokenizer=None):
+		super().__init__(tokenizer=tokenizer)
 		self.conditional_expressions = []
 		self.is_code_block = True
 	
@@ -42,7 +42,7 @@ class CaseExpression(Expression):
 		return full_output
 	
 	def read_expression(tokenizer, tree):
-		expression = CaseExpression()
+		expression = CaseExpression(tokenizer=tokenizer)
 		tokenizer.file.give_character_back()
 		tokenizer.tokenize(stop_ats=[colon_token], tree=expression)
 		expression.convert_expressions_to_conditionals()

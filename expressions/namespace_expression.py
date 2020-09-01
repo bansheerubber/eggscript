@@ -2,8 +2,8 @@ from expression import Expression
 from regex import chaining_token, closing_bracket_token, closing_parenthesis_token, namespace_token, operator_token_without_concatenation, semicolon_token, template_literal_token
 
 class NamespaceExpression(Expression):
-	def __init__(self):
-		super().__init__()
+	def __init__(self, tokenizer=None):
+		super().__init__(tokenizer=tokenizer)
 		self.parent = None
 		self.is_chainable = True
 	
@@ -21,7 +21,7 @@ class NamespaceExpression(Expression):
 		return output[0:-2] + self.handle_semicolon()
 	
 	def read_expression(tokenizer, inheritable_give_back_stop_at):
-		namespace_expression = NamespaceExpression()
+		namespace_expression = NamespaceExpression(tokenizer=tokenizer)
 		tokenizer.add_expression(namespace_expression, tokenizer.get_symbol(tokenizer.buffer))
 		tokenizer.file.give_character_back()
 		while tokenizer.file.read_character() == ":" and tokenizer.file.read_character() == ":":

@@ -2,8 +2,8 @@ from parentheses_expression import ParenthesesExpression
 from regex import vector_escape_token
 
 class VectorEscapeExpression(ParenthesesExpression):
-	def __init__(self):
-		super().__init__()
+	def __init__(self, tokenizer=None):
+		super().__init__(tokenizer=tokenizer)
 		is_chainable = False
 	
 	def __str__(self):

@@ -2,8 +2,8 @@ from expression import Expression
 from regex import semicolon_token, valid_return
 
 class ReturnExpression(Expression):
-	def __init__(self):
-		super().__init__()
+	def __init__(self, tokenizer=None):
+		super().__init__(tokenizer=tokenizer)
 	
 	def __str__(self):
 		return f"ReturnExpression({self.expressions})"
@@ -22,7 +22,7 @@ class ReturnExpression(Expression):
 		return f"return{output}{self.handle_semicolon()}"
 	
 	def read_expression(tokenizer, tree):
-		expression = ReturnExpression()
+		expression = ReturnExpression(tokenizer=tokenizer)
 		
 		tokenizer.file.give_character_back()
 		tokenizer.tokenize(give_back_stop_ats=[semicolon_token], tree=expression)

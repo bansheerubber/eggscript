@@ -2,8 +2,8 @@ from expression import Expression
 from regex import chaining_token, closing_bracket_token, closing_parenthesis_token, operator_token_without_concatenation, semicolon_token, template_literal_token
 
 class ChainingExpression(Expression):
-	def __init__(self):
-		super().__init__()
+	def __init__(self, tokenizer=None):
+		super().__init__(tokenizer=tokenizer)
 		self.parent = None
 	
 	def __str__(self):
@@ -27,7 +27,7 @@ class ChainingExpression(Expression):
 			first_expression = tokenizer.get_symbol(tokenizer.buffer)
 			tokenizer.buffer = ""
 		
-		chaining_expression = ChainingExpression()
+		chaining_expression = ChainingExpression(tokenizer=tokenizer)
 		tokenizer.add_expression(chaining_expression, first_expression)
 		tokenizer.file.give_character_back()
 		while tokenizer.file.read_character() == ".":

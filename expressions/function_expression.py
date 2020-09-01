@@ -5,8 +5,8 @@ from regex import closing_curly_bracket_token, closing_parenthesis_token, openin
 import re
 
 class FunctionExpression(Expression):
-	def __init__(self):
-		super().__init__()
+	def __init__(self, tokenizer=None):
+		super().__init__(tokenizer=tokenizer)
 		self.name_symbol = None
 		self.argument_expressions = []
 		self.parent = None
@@ -19,7 +19,7 @@ class FunctionExpression(Expression):
 
 	def convert_expressions_to_arguments(self):
 		if len(self.expressions) > 0:
-			self.argument_expressions.append(ArgumentExpression(expressions=self.expressions))
+			self.argument_expressions.append(ArgumentExpression(expressions=self.expressions, current_line_index=self.current_line_index, current_index=self.current_index, current_file_name=self.current_file_name))
 			self.expressions = []
 	
 	def __str__(self):
@@ -54,7 +54,7 @@ class FunctionExpression(Expression):
 		return full_output
 	
 	def read_expression(tokenizer, tree):
-		expression = FunctionExpression()
+		expression = FunctionExpression(tokenizer=tokenizer)
 
 		tokenizer.file.give_character_back()
 		tokenizer.tokenize(stop_ats=[opening_parenthesis_token], inheritable_give_back_stop_at=[opening_parenthesis_token], tree=expression)

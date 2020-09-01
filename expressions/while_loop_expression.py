@@ -3,8 +3,8 @@ from expression import Expression
 from regex import closing_curly_bracket_token, closing_parenthesis_token, opening_curly_bracket_token, semicolon_token, valid_while
 
 class WhileLoopExpression(Expression):
-	def __init__(self):
-		super().__init__()
+	def __init__(self, tokenizer=None):
+		super().__init__(tokenizer=tokenizer)
 		self.conditional_expressions = []
 		self.is_code_block = True
 	
@@ -44,7 +44,7 @@ class WhileLoopExpression(Expression):
 		return full_output
 	
 	def read_expression(tokenizer, tree):
-		expression = WhileLoopExpression()
+		expression = WhileLoopExpression(tokenizer=tokenizer)
 		
 		tokenizer.tokenize(stop_ats=[closing_parenthesis_token], tree=expression)
 		expression.convert_expressions_to_conditionals()

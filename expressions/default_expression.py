@@ -3,8 +3,8 @@ from expression import Expression
 from regex import closing_curly_bracket_token, valid_case, valid_default
 
 class DefaultExpression(Expression):
-	def __init__(self):
-		super().__init__()
+	def __init__(self, tokenizer=None):
+		super().__init__(tokenizer=tokenizer)
 		self.is_code_block = True
 	
 	def __str__(self):
@@ -33,7 +33,7 @@ class DefaultExpression(Expression):
 		return full_output
 	
 	def read_expression(tokenizer, tree):
-		expression = DefaultExpression()
+		expression = DefaultExpression(tokenizer=tokenizer)
 		# read up until next case, next default, or }
 		tokenizer.tokenize(give_back_stop_ats=[closing_curly_bracket_token], buffer_give_back_stop_at=[valid_case, valid_default], tree=expression)
 

@@ -3,7 +3,7 @@ from expression import Expression
 
 class Literal(Expression):
 	def __init__(self, value):
-		super().__init__()
+		super().__init__(no_errors=True)
 		self.value = value
 		self.parent = None
 	

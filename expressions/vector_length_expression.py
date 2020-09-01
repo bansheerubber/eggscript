@@ -1,10 +1,11 @@
 from parentheses_expression import ParenthesesExpression
 from method_expression import MethodExpression
 from symbol import Symbol
+from syntax_exception import SyntaxException
 
 class VectorLengthExpression(ParenthesesExpression):
-	def __init__(self):
-		super().__init__()
+	def __init__(self, tokenizer=None):
+		super().__init__(tokenizer=tokenizer)
 		self.parent = None
 		self.is_chainable = True
 	
@@ -16,7 +17,7 @@ class VectorLengthExpression(ParenthesesExpression):
 	
 	def to_script(self):		
 		if len(self.expressions) == 0:
-			raise Exception("Empty vector length expression")
+			raise SyntaxException("Vector length exception: empty expression")
 		
 		if (
 			len(self.expressions) == 1
@@ -27,7 +28,7 @@ class VectorLengthExpression(ParenthesesExpression):
 			self.expressions[0].method_symbol = Symbol("vectorDist")
 			return self.expressions[0].to_script()
 		else:
-			method_expression = MethodExpression(Symbol("vectorLen"))
+			method_expression = MethodExpression(Symbol("vectorLen"), current_line_index=self.current_line_index, current_index=self.current_index, current_file_name=self.current_file_name)
 			method_expression.parent = self.parent
 
 			method_expression.expressions = self.expressions

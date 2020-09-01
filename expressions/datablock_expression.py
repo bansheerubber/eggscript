@@ -4,8 +4,8 @@ from inheritance_expression import InheritanceExpression
 from regex import closing_curly_bracket_token, closing_parenthesis_token, colon_token, opening_curly_bracket_token, opening_parenthesis_token, valid_datablock
 
 class DatablockExpression(Expression):
-	def __init__(self):
-		super().__init__()
+	def __init__(self, tokenizer=None):
+		super().__init__(tokenizer=tokenizer)
 		self.class_symbol = None
 		self.name_symbol = None
 		self.is_code_block = True
@@ -51,7 +51,7 @@ class DatablockExpression(Expression):
 		return full_output
 	
 	def read_expression(tokenizer, tree):
-		expression = DatablockExpression()
+		expression = DatablockExpression(tokenizer=tokenizer)
 		tokenizer.file.give_character_back()
 
 		tokenizer.tokenize(stop_ats=[opening_parenthesis_token], tree=expression)
@@ -60,7 +60,7 @@ class DatablockExpression(Expression):
 		tokenizer.tokenize(stop_ats=[closing_parenthesis_token], give_back_stop_ats=[colon_token], tree=expression)
 
 		if tokenizer.file.read_character() == ":":
-			inheritance_expression = InheritanceExpression()
+			inheritance_expression = InheritanceExpression(tokenizer=tokenizer)
 			inheritance_expression.child_class = expression.expressions[0]
 			tokenizer.tokenize(stop_ats=[closing_parenthesis_token], tree=inheritance_expression)
 			inheritance_expression.convert_expression_to_super_class()

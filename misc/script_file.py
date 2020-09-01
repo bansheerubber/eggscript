@@ -3,7 +3,7 @@ from expression import Expression
 
 class ScriptFile(Expression):
 	def __init__(self, filename):
-		super().__init__()
+		super().__init__(no_errors=True)
 		self.expressions = []
 		self.filename = filename
 		self.parent = None

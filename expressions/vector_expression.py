@@ -5,12 +5,13 @@ from operator_expression import OperatorExpression
 from parentheses_expression import ParenthesesExpression
 from regex import closing_parenthesis_token, closing_vector_escape_token, opening_parenthesis_token, opening_vector_escape_token, vector_escape_token, vector_length_token, vector_operator_tokens, vector_token
 from symbol import Symbol
+from syntax_exception import SyntaxException
 from vector_escape_expression import VectorEscapeExpression
 from vector_length_expression import VectorLengthExpression
 
 class VectorExpression(Expression):
-	def __init__(self):
-		super().__init__()
+	def __init__(self, tokenizer=None):
+		super().__init__(tokenizer=tokenizer)
 		self.parent = None
 	
 	def __str__(self):
@@ -31,7 +32,7 @@ class VectorExpression(Expression):
 	
 	def read_expression(tokenizer, expression=None):
 		if expression == None:
-			expression = VectorExpression()
+			expression = VectorExpression(tokenizer=tokenizer)
 
 		stop_ats = [closing_parenthesis_token, opening_parenthesis_token, vector_escape_token, vector_length_token, vector_operator_tokens, vector_token]
 
@@ -49,14 +50,14 @@ class VectorExpression(Expression):
 			elif opening_parenthesis_token.match(char):
 				# handle tokenizing parentheses ourselves
 				tokenizer.file.read_character()
-				parentheses_expression = VectorExpression.read_expression(tokenizer, expression=ParenthesesExpression())
+				parentheses_expression = VectorExpression.read_expression(tokenizer, expression=ParenthesesExpression(tokenizer=tokenizer))
 
 				expression.expressions.append(parentheses_expression)
 				expression.parent = parentheses_expression
 			elif opening_vector_escape_token.match(char):
 				# handle tokenizing parentheses ourselves
 				tokenizer.file.read_character()
-				vector_escape_expression = VectorExpression.read_expression(tokenizer, expression=VectorEscapeExpression())
+				vector_escape_expression = VectorExpression.read_expression(tokenizer, expression=VectorEscapeExpression(tokenizer=tokenizer))
 
 				expression.expressions.append(vector_escape_expression)
 				expression.parent = vector_escape_expression
@@ -65,14 +66,14 @@ class VectorExpression(Expression):
 				char2 = tokenizer.file.read_character()
 
 				if vector_length_token.match(char1) and vector_length_token.match(char2):
-					vector_length_expression = VectorExpression.read_expression(tokenizer, expression=VectorLengthExpression())
+					vector_length_expression = VectorExpression.read_expression(tokenizer, expression=VectorLengthExpression(tokenizer=tokenizer))
 
 					expression.expressions.append(vector_length_expression)
 					expression.parent = vector_length_expression
 				else:
-					raise Exception("Syntax error: invalid vector length token")
+					raise Exception("Vector expression lexer error: invalid vector length token")
 			else:
-				math_operator = OperatorExpression(char)
+				math_operator = OperatorExpression(char, tokenizer=tokenizer)
 				tokenizer.file.read_character()
 
 				expression.expressions.append(math_operator)
@@ -116,6 +117,15 @@ class VectorExpression(Expression):
 		# if we hit an operator that isn't anything, then we've probably reached the end of our expression. quit
 		if operator == None:
 			return
+		elif (
+			left_vector == None
+			or (left_vector != None and operator != None and right_vector == None)
+		):
+			raise SyntaxException(self, "Vector expression syntax error: couldn't find operands")
+		elif operator != None and operator.operator not in VectorExpression.operator_table:
+			raise SyntaxException(self, f"Vector expression syntax error: invalid operator {operator.operator}")
+		elif next_operator != None and next_operator.operator not in VectorExpression.operator_table:
+			raise SyntaxException(self, f"Vector expression syntax error: invalid operator {next_operator.operator}")
 		
 		# do precedence rules
 		if next_operator != None:
@@ -135,11 +145,11 @@ class VectorExpression(Expression):
 		del expression.expressions[index_of_left:index_of_left + 1]
 
 		if operator.operator not in VectorExpression.modifier_operator_table:
-			raise Exception(f"Vector syntax error: {operator.operator} is invalid modifier operator")
+			raise SyntaxException(f"Vector syntax error: {operator.operator} is invalid modifier operator")
 
 		modifier_method = VectorExpression.modifier_operator_table[operator.operator]
 
-		expression.expressions[index_of_left] = MethodExpression(modifier_method[0])
+		expression.expressions[index_of_left] = MethodExpression(modifier_method[0], current_line_index=self.current_line_index, current_index=self.current_index, current_file_name=self.current_file_name)
 		expression.expressions[index_of_left].parent = expression
 
 		for index in range(1, len(modifier_method)):
@@ -157,24 +167,36 @@ class VectorExpression(Expression):
 		
 		del expression.expressions[index_of_left:index_of_left + 2]
 
-		expression.expressions[index_of_left] = MethodExpression(VectorExpression.operator_table[operator.operator])
-		expression.expressions[index_of_left].parent = expression
+		method = VectorExpression.operator_table[operator.operator]
 
-		left_vector.parent = expression.expressions[index_of_left]
-		right_vector.parent = expression.expressions[index_of_left]
+		expression.expressions[index_of_left] = MethodExpression(method[0], current_line_index=self.current_line_index, current_index=self.current_index, current_file_name=self.current_file_name)
+		method_expression = expression.expressions[index_of_left]
+		method_expression.parent = expression
 
-		expression.expressions[index_of_left].expressions.append(left_vector)
-		expression.expressions[index_of_left].convert_expressions_to_arguments()
+		left_vector.parent = method_expression
+		right_vector.parent = method_expression
 
-		expression.expressions[index_of_left].expressions.append(right_vector)
-		expression.expressions[index_of_left].convert_expressions_to_arguments()
+		for argument in method[1]:
+			if argument == None:
+				method_expression.expressions.append(left_vector)
+			else:
+				method_expression.expressions.append(argument)
+		method_expression.convert_expressions_to_arguments()
+
+		for argument in method[2]:
+			if argument == None:
+				method_expression.expressions.append(right_vector)
+			else:
+				method_expression.expressions.append(argument)
+		method_expression.convert_expressions_to_arguments()
+		method_expression.convert_expressions_to_arguments()
 	
 VectorExpression.operator_table = {
-	"+": Symbol("vectorAdd"),
-	"*": Symbol("vectorScale"),
-	"-": Symbol("vectorSub"),
-	"/": Symbol("vectorDivide"),
-	".": Symbol("vectorDot"),
+	"+": (Symbol("vectorAdd"), [None], [None]),
+	"*": (Symbol("vectorScale"), [None], [None]),
+	"-": (Symbol("vectorSub"), [None], [None]),
+	"/": (Symbol("vectorScale"), [None], [Literal("1"), OperatorExpression("/", no_errors=True), None]),
+	".": (Symbol("vectorDot"), [None], [None]),
 }
 
 VectorExpression.modifier_operator_table = {

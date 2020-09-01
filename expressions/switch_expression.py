@@ -3,8 +3,8 @@ from expression import Expression
 from regex import closing_curly_bracket_token, closing_parenthesis_token, opening_curly_bracket_token, valid_switch, valid_switch_string
 
 class SwitchExpression(Expression):
-	def __init__(self, type):
-		super().__init__()
+	def __init__(self, type, tokenizer=None):
+		super().__init__(tokenizer=tokenizer)
 		self.conditional_expressions = []
 		self.type = type
 		self.is_code_block = True
@@ -51,7 +51,7 @@ class SwitchExpression(Expression):
 			switch_type = "switch$"
 		tokenizer.file.read_character()
 		
-		expression = SwitchExpression(switch_type)
+		expression = SwitchExpression(switch_type, tokenizer=tokenizer)
 		
 		tokenizer.tokenize(stop_ats=[closing_parenthesis_token], tree=expression)
 		expression.convert_expressions_to_conditionals()

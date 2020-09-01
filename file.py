@@ -4,6 +4,7 @@ from regex import whitespace
 class File:
 	def __init__(self, filename):
 		self.file = open(filename, "r")
+		self.filename = filename
 		self.current_line = None
 		self.current_line_index = -1
 		self.current_index = 0

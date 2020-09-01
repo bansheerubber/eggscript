@@ -2,8 +2,8 @@ from config import get_config
 from expression import Expression
 
 class Comment(Expression):
-	def __init__(self, comment):
-		super().__init__()
+	def __init__(self, comment, tokenizer=None):
+		super().__init__(tokenizer=tokenizer)
 		self.comment = comment
 		self.parent = None
 	
@@ -26,4 +26,4 @@ class Comment(Expression):
 			
 		# read the rest of the line
 		comment = tokenizer.file.absorb_line()
-		return Comment(comment)
+		return Comment(comment, tokenizer=tokenizer)

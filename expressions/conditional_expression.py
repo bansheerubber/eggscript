@@ -3,8 +3,8 @@ from expression import Expression
 from regex import closing_curly_bracket_token, closing_parenthesis_token, opening_curly_bracket_token, semicolon_token, valid_conditional
 
 class ConditionalExpression(Expression):
-	def __init__(self):
-		super().__init__()
+	def __init__(self, tokenizer=None):
+		super().__init__(tokenizer=tokenizer)
 		self.conditional_expressions = []
 		self.is_code_block = True
 		self.type = ""
@@ -48,7 +48,7 @@ class ConditionalExpression(Expression):
 		return full_output
 	
 	def read_expression(tokenizer, tree):
-		expression = ConditionalExpression()
+		expression = ConditionalExpression(tokenizer=tokenizer)
 		tokenizer.file.give_character_back()
 		if tokenizer.buffer == "else":
 			tokenizer.buffer = tokenizer.buffer + " " + tokenizer.file.read_character() + tokenizer.file.read_character()

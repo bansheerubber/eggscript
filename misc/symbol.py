@@ -2,7 +2,7 @@ from expression import Expression
 
 class Symbol(Expression):
 	def __init__(self, name):
-		super().__init__()
+		super().__init__(no_errors=True)
 		self.name = name
 		self.parent = None
 	

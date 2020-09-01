@@ -3,8 +3,8 @@ from expression import Expression
 from regex import closing_curly_bracket_token, opening_curly_bracket_token, valid_package
 
 class PackageExpression(Expression):
-	def __init__(self):
-		super().__init__()
+	def __init__(self, tokenizer=None):
+		super().__init__(tokenizer=tokenizer)
 		self.name_symbol = None
 		self.is_code_block = True
 	
@@ -40,7 +40,7 @@ class PackageExpression(Expression):
 		return full_output
 	
 	def read_expression(tokenizer, tree):
-		expression = PackageExpression()
+		expression = PackageExpression(tokenizer=tokenizer)
 
 		tokenizer.file.give_character_back()
 

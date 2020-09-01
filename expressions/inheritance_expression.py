@@ -2,8 +2,8 @@ from config import get_config
 from expression import Expression
 
 class InheritanceExpression(Expression):
-	def __init__(self):
-		super().__init__()
+	def __init__(self, tokenizer=None):
+		super().__init__(tokenizer=tokenizer)
 		self.child_class = None
 		self.super_class = None
 	

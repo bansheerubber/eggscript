@@ -3,8 +3,8 @@ from template_literal_expression import TemplateLiteralExpression
 from regex import template_literal_token
 
 class StringLiteral(Expression):
-	def __init__(self, value, delimiter):
-		super().__init__()
+	def __init__(self, value, delimiter, tokenizer=None):
+		super().__init__(tokenizer=tokenizer)
 		self.value = value
 		self.delimiter = delimiter
 		self.parent = None
@@ -33,7 +33,7 @@ class StringLiteral(Expression):
 				continue
 			elif is_template == True and template_literal_token.match(char):
 				if template_literal == None:
-					template_literal = TemplateLiteralExpression() # create template literal if we don't have one
+					template_literal = TemplateLiteralExpression(tokenizer=tokenizer) # create template literal if we don't have one
 				# tokenize b/c we're parsing runnable code
 				tokenizer.tokenize(stop_ats=[template_literal_token], tree=template_literal)
 				# move the templates over to a new list
@@ -46,7 +46,7 @@ class StringLiteral(Expression):
 				output[len(output) - 1] = output[len(output) - 1] + char
 
 		if template_literal == None:
-			return StringLiteral(output[0], delimiter)
+			return StringLiteral(output[0], delimiter, tokenizer=tokenizer)
 		else:
 			template_literal.strings = output
 			return template_literal

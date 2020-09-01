@@ -3,8 +3,8 @@ from expression import Expression
 from regex import closing_curly_bracket_token, closing_parenthesis_token, opening_curly_bracket_token, semicolon_token, valid_for
 
 class ForLoopExpression(Expression):
-	def __init__(self):
-		super().__init__()
+	def __init__(self, tokenizer=None):
+		super().__init__(tokenizer=tokenizer)
 		self.initiation_expressions = []
 		self.conditional_expressions = []
 		self.increment_expressions = []
@@ -63,7 +63,7 @@ class ForLoopExpression(Expression):
 		return full_output
 	
 	def read_expression(tokenizer, tree):
-		expression = ForLoopExpression()
+		expression = ForLoopExpression(tokenizer=tokenizer)
 		
 		tokenizer.tokenize(stop_ats=[semicolon_token], tree=expression)
 		expression.move_initiation_expressions()

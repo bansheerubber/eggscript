@@ -29,7 +29,6 @@ from package_expression import PackageExpression
 from parentheses_expression import ParenthesesExpression
 from postfix_expression import PostfixExpression
 from template_literal_expression import TemplateLiteralExpression
-from tokenizer_exception import TokenizerException
 import regex
 from return_expression import ReturnExpression
 from string_literal import StringLiteral
@@ -142,7 +141,7 @@ class Tokenizer:
 							elif regex.valid_postfix.match(operator.operator):
 								# take last expression and use that for postfix operation
 								last_expression = tree.expressions.pop()
-								new_expression = PostfixExpression(last_expression, operator)
+								new_expression = PostfixExpression(last_expression, operator, tokenizer=self)
 								last_expression.parent = new_expression
 								self.add_expression(tree, new_expression)
 							elif regex.valid_template_string.match(operator.operator):
