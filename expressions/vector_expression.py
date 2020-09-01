@@ -99,7 +99,7 @@ class VectorExpression(Expression):
 		# fetch operand
 		left_vector = expression.safe_get_index(0 + offset)
 		if hasattr(left_vector, "operator"): # handling special cases where operators are used to modify a vector (-, ^)
-			self.replace_modifier_operation_with_call(offset, self.safe_get_index(1 + offset), left_vector, expression=expression)
+			self.replace_modifier_operation_with_call(offset, expression.safe_get_index(1 + offset), left_vector, expression=expression)
 			left_vector = expression.safe_get_index(0 + offset)
 
 		# fetch operator
@@ -126,7 +126,7 @@ class VectorExpression(Expression):
 			raise SyntaxException(self, f"Vector expression syntax error: invalid operator {operator.operator}")
 		elif next_operator != None and next_operator.operator not in VectorExpression.operator_table:
 			raise SyntaxException(self, f"Vector expression syntax error: invalid operator {next_operator.operator}")
-		
+
 		# do precedence rules
 		if next_operator != None:
 			if OperatorExpression.operator_precedence[operator.operator] >= min_precedence and OperatorExpression.operator_precedence[operator.operator] < OperatorExpression.operator_precedence[next_operator.operator]:
