@@ -6,6 +6,12 @@ class VectorEscapeExpression(ParenthesesExpression):
 		super().__init__()
 		is_chainable = False
 	
+	def __str__(self):
+		return f"VectorEscapeExpression({self.expressions})"
+	
+	def __repr__(self):
+		return self.__str__()
+	
 	def read_expression(tokenizer):
 		expression = VectorEscapeExpression()
 		tokenizer.tokenize(stop_ats=[vector_escape_token], tree=expression)

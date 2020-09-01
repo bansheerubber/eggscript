@@ -19,7 +19,7 @@ class ParenthesesExpression(Expression):
 			value = value + expression.to_script()
 
 		if value == "":
-			return f"(((({value}))))"
+			raise Exception("Empty parentheses expression")
 
 		return f"({value})"
 	

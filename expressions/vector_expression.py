@@ -3,9 +3,10 @@ from literal import Literal
 from method_expression import MethodExpression
 from operator_expression import OperatorExpression
 from parentheses_expression import ParenthesesExpression
-from regex import closing_parenthesis_token, closing_vector_escape_token, opening_parenthesis_token, opening_vector_escape_token, vector_escape_token, vector_operator_tokens, vector_token
+from regex import closing_parenthesis_token, closing_vector_escape_token, opening_parenthesis_token, opening_vector_escape_token, vector_escape_token, vector_length_token, vector_operator_tokens, vector_token
 from symbol import Symbol
 from vector_escape_expression import VectorEscapeExpression
+from vector_length_expression import VectorLengthExpression
 
 class VectorExpression(Expression):
 	def __init__(self):
@@ -32,7 +33,7 @@ class VectorExpression(Expression):
 		if expression == None:
 			expression = VectorExpression()
 
-		stop_ats = [closing_parenthesis_token, opening_parenthesis_token, vector_escape_token, vector_operator_tokens, vector_token]
+		stop_ats = [closing_parenthesis_token, opening_parenthesis_token, vector_escape_token, vector_length_token, vector_operator_tokens, vector_token]
 
 		tokenizer.tokenize(give_back_stop_ats=stop_ats, tree=expression) # only support vector operators
 		while vector_token.match(tokenizer.file.read_character()) == None:
@@ -41,20 +42,35 @@ class VectorExpression(Expression):
 			if closing_parenthesis_token.match(char) or closing_vector_escape_token.match(char):
 				tokenizer.file.read_character()
 				return expression
+			elif vector_length_token.match(char) and type(expression) == VectorLengthExpression:
+				tokenizer.file.read_character()
+				tokenizer.file.read_character()
+				return expression
 			elif opening_parenthesis_token.match(char):
 				# handle tokenizing parentheses ourselves
 				tokenizer.file.read_character()
 				parentheses_expression = VectorExpression.read_expression(tokenizer, expression=ParenthesesExpression())
 
 				expression.expressions.append(parentheses_expression)
-				expression.paernt = parentheses_expression
+				expression.parent = parentheses_expression
 			elif opening_vector_escape_token.match(char):
 				# handle tokenizing parentheses ourselves
 				tokenizer.file.read_character()
 				vector_escape_expression = VectorExpression.read_expression(tokenizer, expression=VectorEscapeExpression())
 
 				expression.expressions.append(vector_escape_expression)
-				expression.paernt = vector_escape_expression
+				expression.parent = vector_escape_expression
+			elif vector_length_token.match(char):
+				char1 = tokenizer.file.read_character()
+				char2 = tokenizer.file.read_character()
+
+				if vector_length_token.match(char1) and vector_length_token.match(char2):
+					vector_length_expression = VectorExpression.read_expression(tokenizer, expression=VectorLengthExpression())
+
+					expression.expressions.append(vector_length_expression)
+					expression.parent = vector_length_expression
+				else:
+					raise Exception("Syntax error: invalid vector length token")
 			else:
 				math_operator = OperatorExpression(char)
 				tokenizer.file.read_character()
@@ -71,7 +87,7 @@ class VectorExpression(Expression):
 			expression = self
 		
 		for found_expression in expression.expressions:
-			if type(found_expression) == ParenthesesExpression:
+			if type(found_expression) == ParenthesesExpression or type(found_expression) == VectorLengthExpression:
 				self.handle_parentheses_expressions(expression=found_expression)
 				self.handle_order_of_operations(expression=found_expression)
 
@@ -110,13 +126,16 @@ class VectorExpression(Expression):
 		left_vector = expression.safe_get_index(0 + offset)
 		right_vector = expression.safe_get_index(2 + offset)
 		self.replace_operation_with_call(offset, left_vector, operator, right_vector, expression=expression)
-		self.handle_order_of_operations(offset=offset)
+		self.handle_order_of_operations(offset=offset, expression=expression)
 	
 	def replace_modifier_operation_with_call(self, index_of_left, left_vector, operator, expression=None):
 		if expression == None:
 			expression = self
 		
 		del expression.expressions[index_of_left:index_of_left + 1]
+
+		if operator.operator not in VectorExpression.modifier_operator_table:
+			raise Exception(f"Vector syntax error: {operator.operator} is invalid modifier operator")
 
 		modifier_method = VectorExpression.modifier_operator_table[operator.operator]
 
