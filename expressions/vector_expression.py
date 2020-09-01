@@ -3,7 +3,7 @@ from literal import Literal
 from method_expression import MethodExpression
 from operator_expression import OperatorExpression
 from parentheses_expression import ParenthesesExpression
-from regex import vector_escape_token, vector_operator_tokens, vector_token
+from regex import closing_parenthesis_token, closing_vector_escape_token, opening_parenthesis_token, opening_vector_escape_token, vector_escape_token, vector_operator_tokens, vector_token
 from symbol import Symbol
 from vector_escape_expression import VectorEscapeExpression
 
@@ -28,18 +28,41 @@ class VectorExpression(Expression):
 		
 		return f'{output}{self.handle_semicolon()}'
 	
-	def read_expression(tokenizer):
-		expression = VectorExpression()
+	def read_expression(tokenizer, expression=None):
+		if expression == None:
+			expression = VectorExpression()
 
-		tokenizer.tokenize(give_back_stop_ats=[vector_operator_tokens, vector_token], tree=expression) # only support vector operators
+		stop_ats = [closing_parenthesis_token, opening_parenthesis_token, vector_escape_token, vector_operator_tokens, vector_token]
+
+		tokenizer.tokenize(give_back_stop_ats=stop_ats, tree=expression) # only support vector operators
 		while vector_token.match(tokenizer.file.read_character()) == None:
-			math_operator = OperatorExpression(tokenizer.file.give_character_back())
-			tokenizer.file.read_character()
+			char = tokenizer.file.give_character_back()
+			
+			if closing_parenthesis_token.match(char) or closing_vector_escape_token.match(char):
+				tokenizer.file.read_character()
+				return expression
+			elif opening_parenthesis_token.match(char):
+				# handle tokenizing parentheses ourselves
+				tokenizer.file.read_character()
+				parentheses_expression = VectorExpression.read_expression(tokenizer, expression=ParenthesesExpression())
 
-			expression.expressions.append(math_operator)
-			math_operator.parent = expression
+				expression.expressions.append(parentheses_expression)
+				expression.paernt = parentheses_expression
+			elif opening_vector_escape_token.match(char):
+				# handle tokenizing parentheses ourselves
+				tokenizer.file.read_character()
+				vector_escape_expression = VectorExpression.read_expression(tokenizer, expression=VectorEscapeExpression())
 
-			tokenizer.tokenize(give_back_stop_ats=[vector_operator_tokens, vector_token], tree=expression)
+				expression.expressions.append(vector_escape_expression)
+				expression.paernt = vector_escape_expression
+			else:
+				math_operator = OperatorExpression(char)
+				tokenizer.file.read_character()
+
+				expression.expressions.append(math_operator)
+				math_operator.parent = expression
+
+				tokenizer.tokenize(give_back_stop_ats=stop_ats, tree=expression)
 
 		return expression
 	
