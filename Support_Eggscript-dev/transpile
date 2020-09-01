@@ -1,0 +1,3 @@
+#!/bin/sh
+cd ../
+./eggscript --clear-cache -o ./Support_Eggscript ./Support_Eggscript-dev

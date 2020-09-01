@@ -1,0 +1,8 @@
+function egg_vectorDivide(%vector, %scalar) {
+	if(getWordCount(%scalar) == 1) {
+		return vectorScale(%vector, %scalar);
+	}
+	else {
+		error($"Eggscript Error: vectorDivide takes a vector and scalar in that order, not vectorDivide({%vector}, {%scalar})");
+	}
+}
