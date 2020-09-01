@@ -37,6 +37,8 @@ class VectorExpression(Expression):
 			expression = VectorExpression(tokenizer=tokenizer)
 
 		stop_ats = [closing_parenthesis_token, opening_parenthesis_token, vector_escape_token, vector_length_token, vector_operator_tokens, vector_token]
+		if type(expression) == VectorEscapeExpression:
+			stop_ats = [vector_escape_token]
 
 		tokenizer.tokenize(give_back_stop_ats=stop_ats, tree=expression) # only support vector operators
 		while vector_token.match(tokenizer.file.read_character()) == None:
