@@ -176,12 +176,12 @@ try:
 			elif option == "-w" or option == "--watch":
 				set_config("watch", True)
 
+		load_cache()
+
 		# go through args and figure out what to do with them
 		for arg in args:
 			if os.path.exists(arg):
 				start = time()
-				
-				load_cache()
 
 				if os.path.isdir(arg):
 					scan_directory(arg, output_directory=get_config("output"), file_replacement=get_config("filereplace"))
