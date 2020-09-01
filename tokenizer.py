@@ -37,6 +37,7 @@ from symbol import Symbol
 from switch_expression import SwitchExpression
 from variable_assignment_expression import VariableAssignmentExpression
 from variable_symbol import VariableSymbol
+from vector_expression import VectorExpression
 from while_loop_expression import WhileLoopExpression
 
 class Tokenizer:
@@ -170,6 +171,8 @@ class Tokenizer:
 					self.absorb_buffer(tree)
 				elif regex.string_token.match(char): # handle strings (except for template strings)
 					self.add_expression(tree, StringLiteral.read_expression(self))
+				elif regex.vector_token.match(char): # handle vector operations
+					self.add_expression(tree, VectorExpression.read_expression(self))
 				elif regex.parentheses_token.match(char):
 					if regex.opening_parenthesis_token.match(char) and regex.valid_symbol.match(self.buffer) == None: # handle math parentheses
 						self.add_expression(tree, ParenthesesExpression.read_expression(self))

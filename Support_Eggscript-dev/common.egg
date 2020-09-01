@@ -1,8 +1,46 @@
 function egg_vectorDivide(%vector, %scalar) {
 	if(getWordCount(%scalar) == 1) {
-		return vectorScale(%vector, %scalar);
+		return vectorScale(%vector, 1 / %scalar);
 	}
 	else {
 		error($"Eggscript Error: vectorDivide takes a vector and scalar in that order, not vectorDivide({%vector}, {%scalar})");
 	}
+}
+
+function egg_vectorScale(%maybeVector, %maybeScalar) {
+	if(getWordCount(%maybeScalar) == 1) {
+		return vectorScale(%maybeVector, %maybeScalar);
+	}
+	else {
+		return vectorScale(%maybeScalar, %maybeVector);
+	}
+}
+
+function bench(%count) {
+	%vector = getRandom(0, 500) SPC getRandom(0, 500) SPC getRandom(0, 500);
+	%scalar = "5";
+	
+	%time = getRealTime();
+	for(%i = 0; %i < %count; %i++) {
+		egg_vectorDivide(%vector, %scalar);
+	}
+	echo((getRealTime() - %time) / %count SPC "ms per call");
+
+	%time = getRealTime();
+	for(%i = 0; %i < %count; %i++) {
+		vectorScale(%vector, 1 / %scalar);
+	}
+	echo((getRealTime() - %time) / %count SPC "ms per call");
+
+	%time = getRealTime();
+	for(%i = 0; %i < %count; %i++) {
+		egg_vectorScale(%vector, %scalar);
+	}
+	echo((getRealTime() - %time) / %count SPC "ms per call");
+
+	%time = getRealTime();
+	for(%i = 0; %i < %count; %i++) {
+		vectorScale(%vector, %scalar);
+	}
+	echo((getRealTime() - %time) / %count SPC "ms per call");
 }

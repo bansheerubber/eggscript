@@ -33,3 +33,9 @@ class Expression:
 	
 	def read_expression(tokenizer):
 		print("Unimplemented read_expression()")
+	
+	def safe_get_index(self, index):
+		if index < len(self.expressions):
+			return self.expressions[index]
+		else:
+			return None

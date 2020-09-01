@@ -19,7 +19,7 @@ class MethodExpression(Expression):
 			self.expressions = []
 	
 	def __str__(self):
-		return f"MethodExpression({self.metmethod_symbolhod_name}, {self.argument_expressions})"
+		return f"MethodExpression({self.method_symbol.to_script()}, {self.argument_expressions})"
 	
 	def __repr__(self):
 		return self.__str__()

@@ -68,3 +68,11 @@ class OperatorExpression(Expression):
 				tokenizer.file.give_character_back()
 			tokenizer.operator_ban = (tokenizer.file.current_line_index, tokenizer.file.current_index + operator_ban_index)
 			return None
+
+OperatorExpression.operator_precedence = {
+	"+": 0,
+	"-": 0,
+	"*": 1,
+	"/": 1,
+	".": 1,
+}
