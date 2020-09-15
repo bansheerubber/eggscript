@@ -1,2 +1,6 @@
 #!/bin/sh
-python -m eggscript_src "$@"
+cd $(dirname "${0}") > /dev/null
+DIRECTORY=$(pwd -L)
+cd - > /dev/null
+
+PYTHONPATH=$DIRECTORY python -m eggscript_src "$@"
