@@ -81,6 +81,9 @@ class VectorExpression(Expression):
 		for index in range(0, len(expression.expressions)):
 			found_expression = expression.expressions[index]
 			if type(found_expression) == ChainingExpression:
+				if type(found_expression.tail()) != Symbol:
+					continue
+				
 				tail = found_expression.tail().name
 				if vector_valid_replacements.match(tail):
 					parentheses_expression = ParenthesesExpression(tokenizer=expression.tokenizer)
