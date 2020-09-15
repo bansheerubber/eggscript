@@ -280,6 +280,7 @@ VectorExpression.operator_allows_scalars = {
 	"-": OperatorScalarOption.NO_SCALARS,
 	"/": OperatorScalarOption.ONLY_RIGHT_SCALAR,
 	".": OperatorScalarOption.NO_SCALARS,
+	"#": OperatorScalarOption.NO_SCALARS,
 }
 
 VectorExpression.operator_table = {
@@ -288,6 +289,7 @@ VectorExpression.operator_table = {
 	"-": (Symbol("vectorSub"), [None], [None]),
 	"/": (Symbol("vectorScale"), [None], [Literal("1"), OperatorExpression("/", no_errors=True), None]),
 	".": (Symbol("vectorDot"), [None], [None]),
+	"#": (Symbol("vectorCross"), [None], [None]),
 }
 
 VectorExpression.modifier_operator_table = {

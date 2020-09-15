@@ -125,10 +125,15 @@ class Tokenizer:
 						return tree
 			
 				if (
-					regex.operator_token.match(char)
-					and (
-						self.file.current_line_index > self.operator_ban[0]
-						or self.file.current_index > self.operator_ban[1]
+					(
+						regex.operator_token.match(char)
+						and (
+							self.file.current_line_index > self.operator_ban[0]
+							or self.file.current_index > self.operator_ban[1]
+						)
+					) or (
+						vector_mode
+						and regex.vector_cross_token.match(char)
 					)
 				): # handle operators
 					if regex.comma_token.match(char): # handle commas in special case

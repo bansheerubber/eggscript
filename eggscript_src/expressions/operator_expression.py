@@ -75,4 +75,5 @@ OperatorExpression.operator_precedence = {
 	"*": 1,
 	"/": 1,
 	".": 1,
+	"#": 1,
 }
