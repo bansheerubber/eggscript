@@ -11,6 +11,7 @@ class Expression:
 		self.parent = None
 		self.is_chainable = False
 		self.has_arguments = False
+		self.tokenizer = tokenizer
 		self.no_keywords_in_code_block = False
 
 		if current_line_index != None and current_index != None and current_file_name != None:

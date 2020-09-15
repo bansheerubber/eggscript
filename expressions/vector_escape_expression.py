@@ -13,6 +13,6 @@ class VectorEscapeExpression(ParenthesesExpression):
 		return self.__str__()
 	
 	def read_expression(tokenizer):
-		expression = VectorEscapeExpression()
+		expression = VectorEscapeExpression(tokenizer=tokenizer)
 		tokenizer.tokenize(stop_ats=[vector_escape_token], tree=expression)
 		return expression

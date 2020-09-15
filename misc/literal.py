@@ -13,8 +13,11 @@ class Literal(Expression):
 	def __repr__(self):
 		return self.__str__()
 	
+	def is_number(self):
+		return isinstance(self.value, int) or digits.match(self.value)
+	
 	def to_script(self):
-		if digits.match(self.value):
-			return self.value
+		if self.is_number():
+			return str(self.value)
 		else:
 			return f'"{self.value}"'

@@ -26,6 +26,19 @@ class File:
 		self.current_index = 0
 		return rest
 	
+	def peek_character(self, count, ignore_whitespace=True):
+		char = ""
+		for _ in range(0, count):
+			char = self.read_character(ignore_whitespace=ignore_whitespace)
+		
+		for _ in range(0, count):
+			self.give_character_back(ignore_whitespace=ignore_whitespace)
+	
+		return char
+	
+	def peek_next_character(self, ignore_whitespace=True):
+		return self.peek_character(1, ignore_whitespace=ignore_whitespace)
+	
 	def read_character(self, ignore_whitespace=True):
 		if self.current_line_index >= len(self.lines):
 			raise Exception("EOF")

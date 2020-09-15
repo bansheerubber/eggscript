@@ -2,6 +2,7 @@ from parentheses_expression import ParenthesesExpression
 from method_expression import MethodExpression
 from symbol import Symbol
 from syntax_exception import SyntaxException
+from regex import vector_length_token
 
 class VectorLengthExpression(ParenthesesExpression):
 	def __init__(self, tokenizer=None):
@@ -35,3 +36,15 @@ class VectorLengthExpression(ParenthesesExpression):
 			method_expression.convert_expressions_to_arguments()
 
 			return method_expression.to_script()
+	
+	def read_expression(tokenizer):
+		if vector_length_token.match(tokenizer.file.read_character()) == None:
+			raise SyntaxException(self, "Vector length expression syntax error: no double |'s found")
+		
+		expression = VectorLengthExpression(tokenizer=tokenizer)
+		tokenizer.tokenize(stop_ats=[vector_length_token], tree=expression)
+
+		if vector_length_token.match(tokenizer.file.read_character()) == None:
+			raise SyntaxException(self, "Vector length expression syntax error: no double |'s found")
+
+		return expression

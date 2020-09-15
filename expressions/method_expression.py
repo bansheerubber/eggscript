@@ -35,9 +35,9 @@ class MethodExpression(Expression):
 
 		return f"{self.method_symbol.to_script()}({re.sub(r',$', '', value.strip())}){self.handle_semicolon()}"
 	
-	def read_expression(tokenizer):
+	def read_expression(tokenizer, vector_mode=False):
 		expression = MethodExpression(tokenizer.get_symbol(tokenizer.buffer), tokenizer=tokenizer)
 		tokenizer.buffer = ""
-		tokenizer.tokenize(stop_ats=[closing_parenthesis_token], give_back_stop_ats=[semicolon_token], tree=expression)
+		tokenizer.tokenize(stop_ats=[closing_parenthesis_token], give_back_stop_ats=[semicolon_token], tree=expression, vector_mode=vector_mode)
 		expression.convert_expressions_to_arguments()
 		return expression

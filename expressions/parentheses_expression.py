@@ -24,7 +24,7 @@ class ParenthesesExpression(Expression):
 
 		return f"({value})"
 	
-	def read_expression(tokenizer):
+	def read_expression(tokenizer, vector_mode=False):
 		expression = ParenthesesExpression(tokenizer=tokenizer)
-		tokenizer.tokenize(stop_ats=[closing_parenthesis_token], tree=expression)
+		tokenizer.tokenize(stop_ats=[closing_parenthesis_token], tree=expression, vector_mode=vector_mode)
 		return expression

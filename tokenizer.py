@@ -38,6 +38,7 @@ from variable_assignment_expression import VariableAssignmentExpression
 from variable_symbol import VariableSymbol
 from vector_escape_expression import VectorEscapeExpression
 from vector_expression import VectorExpression
+from vector_length_expression import VectorLengthExpression
 from while_loop_expression import WhileLoopExpression
 
 class Tokenizer:
@@ -68,7 +69,16 @@ class Tokenizer:
 	def update_last_expression(self, tree, new_expression):
 		self.add_expression(new_expression, tree.expressions.pop())
 
-	def tokenize(self, stop_ats=[], give_back_stop_ats=[], buffer_give_back_stop_at=[], inheritable_give_back_stop_at=[], tree=None, read_spaces=False):
+	def tokenize(
+		self,
+		stop_ats = [],
+		give_back_stop_ats = [],
+		buffer_give_back_stop_at = [],
+		inheritable_give_back_stop_at = [],
+		tree = None,
+		read_spaces = False,
+		vector_mode = False
+	):
 		self.buffer = ""
 		while True:
 			char = ''
@@ -80,7 +90,8 @@ class Tokenizer:
 			try:
 				# handle keyword matching (function, for, if, etc)
 				if(
-					regex.keywords.match(self.buffer)
+					vector_mode == False
+					and regex.keywords.match(self.buffer)
 					and regex.keywords.match(self.buffer + char) == None
 					and (
 						regex.valid_symbol.match(self.buffer + char) == None
@@ -124,7 +135,8 @@ class Tokenizer:
 						if tree.has_arguments:
 							self.absorb_buffer(tree)
 							tree.convert_expressions_to_arguments()
-					else:
+						continue
+					elif vector_mode == False:
 						operator = OperatorExpression.read_expression(self)
 						if operator != None:
 							self.absorb_buffer(tree)
@@ -148,9 +160,17 @@ class Tokenizer:
 								self.add_expression(tree, StringLiteral.read_expression(self, is_template=True))
 							else:
 								self.add_expression(tree, operator)
-				elif (
+						continue
+					elif vector_mode == True: # when in vector mode, don't attempt to read a multi-character operator and instead dump what we find straight to expression
+						if regex.valid_vector_operators.match(char):
+							self.absorb_buffer(tree)
+							self.add_expression(tree, OperatorExpression(char, tokenizer=self))
+							continue
+					
+				if (
 					regex.chaining_token.match(char)
 					and regex.valid_symbol.match(self.buffer)
+					and regex.valid_symbol.match(self.file.peek_next_character())
 					or (
 						len(tree.expressions) > 0
 						and tree.expressions[-1].is_chainable
@@ -175,11 +195,29 @@ class Tokenizer:
 					self.add_expression(tree, VectorExpression.read_expression(self))
 				elif regex.parentheses_token.match(char):
 					if regex.opening_parenthesis_token.match(char) and regex.valid_symbol.match(self.buffer) == None: # handle math parentheses
-						self.add_expression(tree, ParenthesesExpression.read_expression(self))
+						self.add_expression(tree, ParenthesesExpression.read_expression(self, vector_mode=vector_mode))
 					elif regex.opening_parenthesis_token.match(char) and regex.valid_symbol.match(self.buffer) != None: # handle method parentheses
-						self.add_expression(tree, MethodExpression.read_expression(self))
+						self.add_expression(tree, MethodExpression.read_expression(self, vector_mode=vector_mode))
 				elif regex.opening_bracket_token.match(char): # handle array accessing
 					self.add_expression(tree, ArrayAccessExpression.read_expression(self))
+					self.buffer = ""
+				elif (
+					vector_mode
+					and regex.vector_dot_token.match(char)
+				): # handle vector dots in special case
+					self.add_expression(tree, OperatorExpression(char, tokenizer=self))
+					self.buffer = ""
+				elif (
+					vector_mode
+					and regex.vector_escape_token.match(char)
+				):
+					self.add_expression(tree, VectorEscapeExpression.read_expression(self))
+					self.buffer = ""
+				elif (
+					vector_mode
+					and regex.vector_length_token.match(char)
+				):
+					self.add_expression(tree, VectorLengthExpression.read_expression(self))
 					self.buffer = ""
 				else: # when in doubt, add to buffer
 					self.buffer = self.buffer + char

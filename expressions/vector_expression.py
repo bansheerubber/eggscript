@@ -1,10 +1,11 @@
+from chaining_expression import ChainingExpression
 from enum import IntEnum
 from expression import Expression
 from literal import Literal
 from method_expression import MethodExpression
 from operator_expression import OperatorExpression
 from parentheses_expression import ParenthesesExpression
-from regex import closing_parenthesis_token, closing_vector_escape_token, opening_parenthesis_token, opening_vector_escape_token, vector_escape_token, vector_length_token, vector_operator_tokens, vector_token
+from regex import closing_parenthesis_token, closing_vector_escape_token, opening_parenthesis_token, opening_vector_escape_token, vector_escape_token, vector_length_token, vector_operator_tokens, vector_token, vector_valid_replacements
 from symbol import Symbol
 from syntax_exception import SyntaxException
 from vector_escape_expression import VectorEscapeExpression
@@ -23,8 +24,7 @@ class VectorExpression(Expression):
 		return self.__str__()
 	
 	def to_script(self):
-		self.handle_parentheses_expressions()
-		self.handle_order_of_operations()
+		self.convert_expression()
 		
 		output = ""
 		for expression in self.expressions:
@@ -40,62 +40,64 @@ class VectorExpression(Expression):
 		if type(expression) == VectorEscapeExpression:
 			stop_ats = [vector_escape_token]
 
-		tokenizer.tokenize(give_back_stop_ats=stop_ats, tree=expression) # only support vector operators
-		while vector_token.match(tokenizer.file.read_character()) == None:
-			char = tokenizer.file.give_character_back()
-			
-			if closing_parenthesis_token.match(char) or closing_vector_escape_token.match(char):
-				tokenizer.file.read_character()
-				return expression
-			elif vector_length_token.match(char) and type(expression) == VectorLengthExpression:
-				tokenizer.file.read_character()
-				tokenizer.file.read_character()
-				return expression
-			elif opening_parenthesis_token.match(char):
-				# handle tokenizing parentheses ourselves
-				tokenizer.file.read_character()
-				parentheses_expression = VectorExpression.read_expression(tokenizer, expression=ParenthesesExpression(tokenizer=tokenizer))
-
-				expression.expressions.append(parentheses_expression)
-				expression.parent = parentheses_expression
-			elif opening_vector_escape_token.match(char):
-				# handle tokenizing parentheses ourselves
-				tokenizer.file.read_character()
-				vector_escape_expression = VectorExpression.read_expression(tokenizer, expression=VectorEscapeExpression(tokenizer=tokenizer))
-
-				expression.expressions.append(vector_escape_expression)
-				expression.parent = vector_escape_expression
-			elif vector_length_token.match(char):
-				char1 = tokenizer.file.read_character()
-				char2 = tokenizer.file.read_character()
-
-				if vector_length_token.match(char1) and vector_length_token.match(char2):
-					vector_length_expression = VectorExpression.read_expression(tokenizer, expression=VectorLengthExpression(tokenizer=tokenizer))
-
-					expression.expressions.append(vector_length_expression)
-					expression.parent = vector_length_expression
-				else:
-					raise Exception("Vector expression lexer error: invalid vector length token")
-			else:
-				math_operator = OperatorExpression(char, tokenizer=tokenizer)
-				tokenizer.file.read_character()
-
-				expression.expressions.append(math_operator)
-				math_operator.parent = expression
-
-				tokenizer.tokenize(give_back_stop_ats=stop_ats, tree=expression)
-
+		tokenizer.tokenize(stop_ats=[vector_token], inheritable_give_back_stop_at=[vector_token], tree=expression, vector_mode=True) # only support vector operators
 		return expression
 	
+	def convert_expression(self, expression=None):
+		self.handle_parentheses_expressions(expression=expression)
+		self.handle_method_expressions(expression=expression)
+		self.handle_chain_replacements(expression=expression)
+		self.handle_order_of_operations(expression=expression)
+
 	def handle_parentheses_expressions(self, expression=None):
 		if expression == None:
 			expression = self
 		
 		for found_expression in expression.expressions:
 			if type(found_expression) == ParenthesesExpression or type(found_expression) == VectorLengthExpression:
-				self.handle_parentheses_expressions(expression=found_expression)
-				self.handle_order_of_operations(expression=found_expression)
+				self.convert_expression(expression=found_expression)
+	
+	def handle_method_expressions(self, expression=None):
+		if expression == None:
+			expression = self
+		
+		for found_expression in expression.expressions:
+			if type(found_expression) == MethodExpression:
+				for argument_expression in found_expression.argument_expressions:
+					self.convert_expression(expression=found_expression)
 
+	# replace x, y, z, or w with getWord substitutes
+	def handle_chain_replacements(self, expression=None):
+		if expression == None:
+			expression = self
+		
+		get_word_table = {
+			"x": 0,
+			"y": 1,
+			"z": 2,
+			"w": 3,
+		}
+		
+		for index in range(0, len(expression.expressions)):
+			found_expression = expression.expressions[index]
+			if type(found_expression) == ChainingExpression:
+				tail = found_expression.tail().name
+				if vector_valid_replacements.match(tail):
+					parentheses_expression = ParenthesesExpression(tokenizer=expression.tokenizer)
+					for char in tail:
+						method_expression = MethodExpression(Symbol("getWord"), tokenizer=expression.tokenizer)
+						method_expression.expressions.append(found_expression.splice(0, len(found_expression.expressions) - 1))
+						method_expression.convert_expressions_to_arguments()
+						method_expression.expressions.append(Literal(get_word_table[char]))
+						method_expression.convert_expressions_to_arguments()
+						if len(parentheses_expression.expressions) == 0:
+							parentheses_expression.expressions.append(method_expression)
+						else:
+							parentheses_expression.expressions.append(OperatorExpression("SPC", tokenizer=expression.tokenizer))
+							parentheses_expression.expressions.append(method_expression)
+
+					expression.expressions[index] = parentheses_expression
+						
 	def handle_order_of_operations(self, offset=0, min_precedence=0, expression=None):
 		def is_maybe_scalar_expression(expression):
 			# checking to see if this expression is a scalar expression
@@ -104,6 +106,11 @@ class VectorExpression(Expression):
 				or (
 					type(expression) == MethodExpression
 					and expression.method_symbol.name == "vectorDot"
+					and expression.method_symbol.name == "vectorLen"
+				)
+				or (
+					type(expression) == Literal
+					and expression.is_number()
 				)
 			):
 				return True
@@ -180,6 +187,7 @@ class VectorExpression(Expression):
 				and is_maybe_scalar_expression(right_vector) == True
 			):
 				raise SyntaxException(self, f"Vector expression syntax error: only vector operations are allowed inside backticks, not {left_vector.to_script()} {operator.operator} {right_vector.to_script()}. To escape, use the vector escape syntax " + "{}")
+		# done with syntax errors
 
 		# do precedence rules
 		if next_operator != None:
