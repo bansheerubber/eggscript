@@ -88,16 +88,19 @@ class VectorExpression(Expression):
 				if vector_valid_replacements.match(tail):
 					parentheses_expression = ParenthesesExpression(tokenizer=expression.tokenizer)
 					for char in tail:
-						method_expression = MethodExpression(Symbol("getWord"), tokenizer=expression.tokenizer)
-						method_expression.expressions.append(found_expression.splice(0, len(found_expression.expressions) - 1))
-						method_expression.convert_expressions_to_arguments()
-						method_expression.expressions.append(Literal(get_word_table[char]))
-						method_expression.convert_expressions_to_arguments()
+						replacement_expression = Literal("0")
+						if char != "_":
+							replacement_expression = MethodExpression(Symbol("getWord"), tokenizer=expression.tokenizer)
+							replacement_expression.expressions.append(found_expression.splice(0, len(found_expression.expressions) - 1))
+							replacement_expression.convert_expressions_to_arguments()
+							replacement_expression.expressions.append(Literal(get_word_table[char]))
+							replacement_expression.convert_expressions_to_arguments()
+
 						if len(parentheses_expression.expressions) == 0:
-							parentheses_expression.expressions.append(method_expression)
+							parentheses_expression.expressions.append(replacement_expression)
 						else:
 							parentheses_expression.expressions.append(OperatorExpression("SPC", tokenizer=expression.tokenizer))
-							parentheses_expression.expressions.append(method_expression)
+							parentheses_expression.expressions.append(replacement_expression)
 
 					expression.expressions[index] = parentheses_expression
 						
