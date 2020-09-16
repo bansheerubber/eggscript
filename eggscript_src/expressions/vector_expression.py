@@ -5,7 +5,7 @@ from eggscript_src.misc.literal import Literal
 from eggscript_src.expressions.method_expression import MethodExpression
 from eggscript_src.expressions.operator_expression import OperatorExpression
 from eggscript_src.expressions.parentheses_expression import ParenthesesExpression
-from eggscript_src.regex import closing_parenthesis_token, closing_vector_escape_token, opening_parenthesis_token, opening_vector_escape_token, vector_escape_token, vector_length_token, vector_operator_tokens, vector_token, vector_valid_replacements
+from eggscript_src.regex import closing_parenthesis_token, closing_vector_escape_token, opening_parenthesis_token, opening_vector_escape_token, vector_escape_token, vector_length_token, vector_operator_tokens, vector_together_components, vector_token, vector_valid_replacements
 from eggscript_src.misc.symbol import Symbol
 from eggscript_src.syntax_exception import SyntaxException
 from eggscript_src.expressions.vector_escape_expression import VectorEscapeExpression
@@ -77,6 +77,25 @@ class VectorExpression(Expression):
 			"z": 2,
 			"w": 3,
 		}
+
+		def create_method(chain, buffer):
+			if buffer == "xyz":
+				return chain
+			elif buffer == "_":
+				return Literal("0")
+			elif buffer in VectorExpression.component_table:
+				method_data = VectorExpression.component_table[buffer]
+				replacement_expression = MethodExpression(method_data[0], tokenizer=expression.tokenizer)
+				for index in range(1, len(method_data)):
+					element = method_data[index]
+					if element == None:
+						replacement_expression.expressions.append(chain)
+					else:
+						replacement_expression.expressions.append(Literal(element))
+					replacement_expression.convert_expressions_to_arguments()
+				return replacement_expression
+			else:
+				raise SyntaxException(self, f"Component access '{buffer}' not in component table")
 		
 		for index in range(0, len(expression.expressions)):
 			found_expression = expression.expressions[index]
@@ -87,20 +106,34 @@ class VectorExpression(Expression):
 				tail = found_expression.tail().name
 				if vector_valid_replacements.match(tail):
 					parentheses_expression = ParenthesesExpression(tokenizer=expression.tokenizer)
-					for char in tail:
-						replacement_expression = Literal("0")
-						if char != "_":
-							replacement_expression = MethodExpression(Symbol("getWord"), tokenizer=expression.tokenizer)
-							replacement_expression.expressions.append(found_expression.splice(0, len(found_expression.expressions) - 1))
-							replacement_expression.convert_expressions_to_arguments()
-							replacement_expression.expressions.append(Literal(get_word_table[char]))
-							replacement_expression.convert_expressions_to_arguments()
+					
+					buffer = ""
+					together_index = 0
+					chain = found_expression.splice(0, len(found_expression.expressions) - 1)
+					while together_index < len(tail):
+						before_match = vector_together_components.match(buffer)
+						
+						buffer = buffer + tail[together_index]
 
-						if len(parentheses_expression.expressions) == 0:
-							parentheses_expression.expressions.append(replacement_expression)
-						else:
-							parentheses_expression.expressions.append(OperatorExpression("SPC", tokenizer=expression.tokenizer))
-							parentheses_expression.expressions.append(replacement_expression)
+						if len(buffer) >= 2:
+							if vector_together_components.match(buffer) == None:
+								replacement_expression = create_method(chain, buffer[0:-1])
+								if len(parentheses_expression.expressions) == 0:
+									parentheses_expression.expressions.append(replacement_expression)
+								else:
+									parentheses_expression.expressions.append(OperatorExpression("SPC", tokenizer=expression.tokenizer))
+									parentheses_expression.expressions.append(replacement_expression)
+
+								buffer = buffer[-1]
+						
+						together_index = together_index + 1
+					
+					replacement_expression = create_method(chain, buffer)
+					if len(parentheses_expression.expressions) == 0:
+						parentheses_expression.expressions.append(replacement_expression)
+					else:
+						parentheses_expression.expressions.append(OperatorExpression("SPC", tokenizer=expression.tokenizer))
+						parentheses_expression.expressions.append(replacement_expression)
 
 					expression.expressions[index] = parentheses_expression
 						
@@ -290,6 +323,18 @@ VectorExpression.operator_table = {
 	"/": (Symbol("vectorScale"), [None], [Literal("1"), OperatorExpression("/", no_errors=True), None]),
 	".": (Symbol("vectorDot"), [None], [None]),
 	"#": (Symbol("vectorCross"), [None], [None]),
+}
+
+VectorExpression.component_table = {
+	"x": 		(Symbol("getWord"), None, 0),
+	"y": 		(Symbol("getWord"), None, 1),
+	"z": 		(Symbol("getWord"), None, 2),
+	"w": 		(Symbol("getWord"), None, 3),
+	"xy": 	(Symbol("getWords"), None, 0, 1),
+	"xyzw": (Symbol("getWords"), None, 0, 3),
+	"yz":		(Symbol("getWords"), None, 1, 2),
+	"yzw": 	(Symbol("getWords"), None, 1, 3),
+	"zw": 	(Symbol("getWords"), None, 2, 3),
 }
 
 VectorExpression.modifier_operator_table = {
