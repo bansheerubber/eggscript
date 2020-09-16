@@ -1,5 +1,5 @@
 from eggscript_src.expressions.expression import Expression
-from eggscript_src.regex import chaining_token, closing_bracket_token, closing_parenthesis_token, operator_token_without_concatenation, semicolon_token, template_literal_token, valid_symbol
+from eggscript_src.regex import chaining_token, closing_bracket_token, closing_parenthesis_token, operator_token_without_concatenation, semicolon_token, template_literal_token, valid_symbol, vector_cross_token
 
 class ChainingExpression(Expression):
 	def __init__(self, tokenizer=None):
@@ -40,7 +40,7 @@ class ChainingExpression(Expression):
 		tokenizer.add_expression(chaining_expression, first_expression)
 		tokenizer.file.give_character_back()
 		while tokenizer.file.read_character() == "." and valid_symbol.match(tokenizer.file.peek_next_character()):
-			tokenizer.tokenize(stop_ats=[], give_back_stop_ats=inheritable_give_back_stop_at + [semicolon_token, chaining_token, operator_token_without_concatenation, closing_parenthesis_token, closing_bracket_token, template_literal_token], tree=chaining_expression)
+			tokenizer.tokenize(stop_ats=[], give_back_stop_ats=inheritable_give_back_stop_at + [semicolon_token, chaining_token, operator_token_without_concatenation, closing_parenthesis_token, closing_bracket_token, template_literal_token, vector_cross_token], tree=chaining_expression)
 		tokenizer.file.give_character_back(ignore_whitespace=True)
 
 		return chaining_expression
