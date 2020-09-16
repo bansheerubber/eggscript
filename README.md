@@ -10,6 +10,8 @@ Features include:
 
 **It should be noted that eggscript does not have any error checking yet since this is still early days. Please write good code.**
 
+Play around with eggscript here: https://bansheerubber.com/eggscript/
+
 ### What is this:
 This is an extension of TorqueScript, as mentioned above. What this means is eggscript keeps most of the same syntax and grammar of TorqueScript while adding on some extensions via additional syntax. The file format of eggscript is the ```.egg``` file. In one of these files, you will write mostly TorqueScript but you will also be able to use some of the extensions provided by eggscript. Any syntax will transpile down to TorqueScript when the eggscript transpiler program is run. Think Typescript, but for TorqueScript instead of Javascript.
 
