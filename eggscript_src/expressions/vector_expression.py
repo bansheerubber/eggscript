@@ -5,7 +5,7 @@ from eggscript_src.misc.literal import Literal
 from eggscript_src.expressions.method_expression import MethodExpression
 from eggscript_src.expressions.operator_expression import OperatorExpression
 from eggscript_src.expressions.parentheses_expression import ParenthesesExpression
-from eggscript_src.regex import closing_parenthesis_token, closing_vector_escape_token, opening_parenthesis_token, opening_vector_escape_token, vector_escape_token, vector_length_token, vector_operator_tokens, vector_together_components, vector_token, vector_valid_replacements
+from eggscript_src.regex import closing_parenthesis_token, closing_vector_escape_token, opening_parenthesis_token, opening_vector_escape_token, vector_cross_token, vector_escape_token, vector_length_token, vector_operator_tokens, vector_together_components, vector_token, vector_valid_replacements
 from eggscript_src.misc.symbol import Symbol
 from eggscript_src.syntax_exception import SyntaxException
 from eggscript_src.expressions.vector_escape_expression import VectorEscapeExpression
@@ -40,7 +40,7 @@ class VectorExpression(Expression):
 		if type(expression) == VectorEscapeExpression:
 			stop_ats = [vector_escape_token]
 
-		tokenizer.tokenize(stop_ats=[vector_token], inheritable_give_back_stop_at=[vector_token], tree=expression, vector_mode=True) # only support vector operators
+		tokenizer.tokenize(stop_ats=[vector_token], inheritable_give_back_stop_at=[vector_token, vector_cross_token], tree=expression, vector_mode=True) # only support vector operators
 		return expression
 	
 	def convert_expression(self, expression=None):
