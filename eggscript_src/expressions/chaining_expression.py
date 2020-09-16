@@ -28,7 +28,7 @@ class ChainingExpression(Expression):
 			new_expression.expressions.append(self.expressions[index])
 		return new_expression
 	
-	def read_expression(tokenizer, tree, inheritable_give_back_stop_at):
+	def read_expression(tokenizer, tree, inheritable_give_back_stop_at, vector_mode=False):
 		first_expression = None
 		if len(tree.expressions) > 0 and tree.expressions[-1].is_chainable:
 			first_expression = tree.expressions.pop()
@@ -36,11 +36,15 @@ class ChainingExpression(Expression):
 			first_expression = tokenizer.get_symbol(tokenizer.buffer)
 			tokenizer.buffer = ""
 		
+		vector_mode_tokens = []
+		if vector_mode:
+			vector_mode_tokens = [vector_cross_token]
+		
 		chaining_expression = ChainingExpression(tokenizer=tokenizer)
 		tokenizer.add_expression(chaining_expression, first_expression)
 		tokenizer.file.give_character_back()
 		while tokenizer.file.read_character() == "." and valid_symbol.match(tokenizer.file.peek_next_character()):
-			tokenizer.tokenize(stop_ats=[], give_back_stop_ats=inheritable_give_back_stop_at + [semicolon_token, chaining_token, operator_token_without_concatenation, closing_parenthesis_token, closing_bracket_token, template_literal_token, vector_cross_token], tree=chaining_expression)
+			tokenizer.tokenize(stop_ats=[], give_back_stop_ats=inheritable_give_back_stop_at + [semicolon_token, chaining_token, operator_token_without_concatenation, closing_parenthesis_token, closing_bracket_token, template_literal_token] + vector_mode_tokens, tree=chaining_expression)
 		tokenizer.file.give_character_back(ignore_whitespace=True)
 
 		return chaining_expression

@@ -1,5 +1,5 @@
 from eggscript_src.expressions.expression import Expression
-from eggscript_src.regex import chaining_token, closing_bracket_token, closing_parenthesis_token, namespace_token, operator_token_without_concatenation, semicolon_token, template_literal_token
+from eggscript_src.regex import chaining_token, closing_bracket_token, closing_parenthesis_token, namespace_token, operator_token_without_concatenation, semicolon_token, template_literal_token, vector_cross_token
 
 class NamespaceExpression(Expression):
 	def __init__(self, tokenizer=None):
@@ -20,12 +20,16 @@ class NamespaceExpression(Expression):
 
 		return output[0:-2] + self.handle_semicolon()
 	
-	def read_expression(tokenizer, inheritable_give_back_stop_at):
+	def read_expression(tokenizer, inheritable_give_back_stop_at, vector_mode=False):
+		vector_mode_tokens = []
+		if vector_mode:
+			vector_mode_tokens = [vector_cross_token]
+		
 		namespace_expression = NamespaceExpression(tokenizer=tokenizer)
 		tokenizer.add_expression(namespace_expression, tokenizer.get_symbol(tokenizer.buffer))
 		tokenizer.file.give_character_back()
 		while tokenizer.file.read_character() == ":" and tokenizer.file.read_character() == ":":
-			tokenizer.tokenize(stop_ats=[], give_back_stop_ats=inheritable_give_back_stop_at + [semicolon_token, namespace_token, operator_token_without_concatenation, closing_parenthesis_token, closing_bracket_token, chaining_token, template_literal_token], tree=namespace_expression)
+			tokenizer.tokenize(stop_ats=[], give_back_stop_ats=inheritable_give_back_stop_at + [semicolon_token, namespace_token, operator_token_without_concatenation, closing_parenthesis_token, closing_bracket_token, chaining_token, template_literal_token] + vector_mode_tokens, tree=namespace_expression)
 		tokenizer.file.give_character_back()
 			
 		return namespace_expression

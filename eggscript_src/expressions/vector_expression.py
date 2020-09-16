@@ -71,13 +71,6 @@ class VectorExpression(Expression):
 		if expression == None:
 			expression = self
 		
-		get_word_table = {
-			"x": 0,
-			"y": 1,
-			"z": 2,
-			"w": 3,
-		}
-
 		def create_method(chain, buffer):
 			if buffer == "xyz":
 				return chain

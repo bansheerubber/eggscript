@@ -182,12 +182,12 @@ class Tokenizer:
 						and regex.valid_symbol.match(self.buffer) == None
 					)
 				): # handle chaining (%test.test.test.test...)
-					self.add_expression(tree, ChainingExpression.read_expression(self, tree, inheritable_give_back_stop_at))
+					self.add_expression(tree, ChainingExpression.read_expression(self, tree, inheritable_give_back_stop_at, vector_mode=vector_mode))
 					self.buffer = "" # absorb buffer
 				elif regex.namespace_token.match(char): # handle namespaces ($Test::frog:egg...)
 					if regex.valid_symbol.match(self.buffer):
 						# if we have a valid symbol, then build chaining expression from remaining valid symbols
-						self.add_expression(tree, NamespaceExpression.read_expression(self, inheritable_give_back_stop_at))
+						self.add_expression(tree, NamespaceExpression.read_expression(self, inheritable_give_back_stop_at, vector_mode=vector_mode))
 						self.buffer = "" # absorb buffer
 					else:
 						raise Exception(f"Invalid symbol for namespace expression '{self.buffer}'")
