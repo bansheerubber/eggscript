@@ -139,7 +139,7 @@ def create_watcher(path):
 				number_of_files = get_config("readfiles")
 				number_of_skipped_files = get_config("skippedfiles")
 
-				print(f"Read {number_of_files} script files, parsed {parsed_lines} lines and exported {exported_lines} lines in {time_taken} seconds")
+				print(f"Read {number_of_files} script files, parsed {parsed_lines} lines and exported {exported_lines} lines in {time_taken} seconds\a")
 	
 		watch_manager = pyinotify.WatchManager()
 		notifier = pyinotify.Notifier(watch_manager, EventHandler(path))
