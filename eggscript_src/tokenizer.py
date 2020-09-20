@@ -88,6 +88,12 @@ class Tokenizer:
 				break
 
 			try:
+				for stop_at in buffer_give_back_stop_at:
+					if stop_at.match(self.buffer):
+						self.file.current_index = self.file.current_index - len(self.buffer) - 2
+						self.buffer = ""
+						return tree
+
 				# handle keyword matching (function, for, if, etc)
 				if(
 					vector_mode == False
@@ -106,12 +112,6 @@ class Tokenizer:
 							break
 					
 					continue
-				
-				for stop_at in buffer_give_back_stop_at:
-					if stop_at.match(self.buffer):
-						self.file.current_index = self.file.current_index - len(self.buffer) - 2
-						self.buffer = ""
-						return tree
 			
 				for stop_at in give_back_stop_ats:
 					if stop_at.match(char):
@@ -123,7 +123,7 @@ class Tokenizer:
 					if stop_at.match(char):
 						self.absorb_buffer(tree)
 						return tree
-			
+
 				if (
 					(
 						regex.operator_token.match(char)
@@ -171,7 +171,7 @@ class Tokenizer:
 							self.absorb_buffer(tree)
 							self.add_expression(tree, OperatorExpression(char, tokenizer=self))
 							continue
-					
+				
 				if (
 					regex.chaining_token.match(char)
 					and regex.valid_symbol.match(self.buffer)
@@ -210,18 +210,19 @@ class Tokenizer:
 					vector_mode
 					and regex.vector_dot_token.match(char)
 				): # handle vector dots in special case
+					self.absorb_buffer(tree)
 					self.add_expression(tree, OperatorExpression(char, tokenizer=self))
 					self.buffer = ""
 				elif (
 					vector_mode
 					and regex.vector_escape_token.match(char)
-				):
+				): # handle vector escapes
 					self.add_expression(tree, VectorEscapeExpression.read_expression(self))
 					self.buffer = ""
 				elif (
 					vector_mode
 					and regex.vector_length_token.match(char)
-				):
+				): # handle vector lengths
 					self.add_expression(tree, VectorLengthExpression.read_expression(self))
 					self.buffer = ""
 				else: # when in doubt, add to buffer

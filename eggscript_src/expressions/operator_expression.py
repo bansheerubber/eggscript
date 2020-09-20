@@ -57,16 +57,16 @@ class OperatorExpression(Expression):
 			):
 				tokenizer.file.give_character_back()
 				tokenizer.file.give_character_back()
-				tokenizer.operator_ban = (tokenizer.file.current_line_index, tokenizer.file.current_index + operator_ban_index)
+				tokenizer.operator_ban = (tokenizer.file.current_line_index, tokenizer.file.current_index + 1)
 				return None
 			else:
 				tokenizer.file.give_character_back()
 			
 			return OperatorExpression(saved_operator, tokenizer=tokenizer)
 		else:
-			for i in range(0, operator_ban_index + 1):
+			for i in range(0, operator_ban_index + encountered_spaces + 1):
 				tokenizer.file.give_character_back()
-			tokenizer.operator_ban = (tokenizer.file.current_line_index, tokenizer.file.current_index + operator_ban_index)
+			tokenizer.operator_ban = (tokenizer.file.current_line_index, tokenizer.file.current_index + 1)
 			return None
 
 OperatorExpression.operator_precedence = {

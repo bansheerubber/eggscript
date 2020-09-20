@@ -34,6 +34,6 @@ class NamespaceExpression(Expression):
 			and valid_start_of_symbol.match(tokenizer.file.peek_next_character(ignore_whitespace=False))
 		):
 			tokenizer.tokenize(stop_ats=[], give_back_stop_ats=inheritable_give_back_stop_at + [semicolon_token, namespace_token, operator_token_without_concatenation, closing_parenthesis_token, closing_bracket_token, chaining_token, template_literal_token, whitespace] + vector_mode_tokens, tree=namespace_expression, read_spaces=True)
-		tokenizer.file.give_character_back()
+		tokenizer.file.give_character_back(ignore_whitespace=True)
 			
 		return namespace_expression
